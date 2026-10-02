@@ -3,23 +3,24 @@ name: contract-ci
 on:
   push:
     paths:
-      - 'shared/**'
+      - 'contract/**'
       - 'scripts/**'
-      - 'harmonyos/entry/src/ohosTest/ets/test/fixtures/**'
-      - '.github/workflows/contract-ci.yml'
+      - 'entry/src/ohosTest/ets/test/fixtures/**'
   pull_request:
     paths:
-      - 'shared/**'
+      - 'contract/**'
       - 'scripts/**'
-      - 'harmonyos/entry/src/ohosTest/ets/test/fixtures/**'
+      - 'entry/src/ohosTest/ets/test/fixtures/**'
 
 jobs:
-  shared-fixture:
+  fixture:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - name: Verify generated ArkTS fixture
-        run: python3 scripts/verify_shared_fixtures.py
+      - name: Regenerate ArkTS fixture
+        run: python3 scripts/sync_expiry_fixture.py
+      - name: Ensure generated fixture is committed
+        run: git diff --exit-code
