@@ -2,8 +2,8 @@ from pathlib import Path
 import json
 
 ROOT = Path(__file__).resolve().parents[1]
-source = ROOT / 'shared' / 'expiry-test-cases.json'
-target = ROOT / 'harmonyos' / 'entry' / 'src' / 'ohosTest' / 'ets' / 'test' / 'fixtures' / 'ExpiryFixtures.ets'
+source = ROOT / 'contract' / 'expiry-test-cases.json'
+target = ROOT / 'entry' / 'src' / 'ohosTest' / 'ets' / 'test' / 'fixtures' / 'ExpiryFixtures.ets'
 
 data = json.loads(source.read_text(encoding='utf-8'))
 
@@ -14,7 +14,7 @@ def q(value):
 
 lines = [
     '// AUTO-GENERATED. DO NOT EDIT.',
-    '// Source: /shared/expiry-test-cases.json',
+    '// Source: /contract/expiry-test-cases.json',
     '',
     'export interface ExpiryFixture {',
     '  id: string;',
