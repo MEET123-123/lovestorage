@@ -1,27 +1,10 @@
-# OS / IDE
 .DS_Store
 .idea/
 .vscode/
 *.iml
-
-# Java
-backend/target/
-backend/.mvn/wrapper/dists/
+target/
+.mvn/wrapper/dists/
 *.log
-
-# HarmonyOS / DevEco
-harmonyos/.hvigor/
-harmonyos/oh_modules/
-harmonyos/entry/build/
-harmonyos/build/
-harmonyos/local.properties
-harmonyos/.idea/
-
-# Env / secrets
 .env
 .env.*
 !.env.example
-
-# Python
-__pycache__/
-*.pyc
