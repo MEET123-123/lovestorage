@@ -1,0 +1,218 @@
+openapi: 3.1.0
+info:
+  title: Smart Expiry API
+  version: 1.0.0-m1
+  description: M1 contract for health, categories and item CRUD.
+servers:
+  - url: http://localhost:8080
+paths:
+  /api/v1/health:
+    get:
+      operationId: health
+      tags: [System]
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseHealth'
+  /api/v1/categories:
+    get:
+      operationId: listCategories
+      tags: [Category]
+      responses:
+        '200':
+          description: Category list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [code, message, data]
+                properties:
+                  code: { type: integer, example: 0 }
+                  message: { type: string, example: success }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Category' }
+  /api/v1/items:
+    get:
+      operationId: listItems
+      tags: [Item]
+      responses:
+        '200':
+          description: Active item list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [code, message, data]
+                properties:
+                  code: { type: integer, example: 0 }
+                  message: { type: string, example: success }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/ItemResponse' }
+    post:
+      operationId: createItem
+      tags: [Item]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateItemRequest' }
+      responses:
+        '200':
+          description: Created item
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponseItem' }
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+  /api/v1/items/{itemId}:
+    parameters:
+      - in: path
+        name: itemId
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      operationId: getItem
+      tags: [Item]
+      responses:
+        '200':
+          description: Item detail
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponseItem' }
+        '404':
+          description: Item not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+    patch:
+      operationId: updateItem
+      tags: [Item]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateItemRequest' }
+      responses:
+        '200':
+          description: Updated item
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponseItem' }
+    delete:
+      operationId: deleteItem
+      tags: [Item]
+      responses:
+        '200':
+          description: Soft deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [code, message, data]
+                properties:
+                  code: { type: integer, example: 0 }
+                  message: { type: string, example: success }
+                  data: { type: boolean, example: true }
+components:
+  schemas:
+    ApiResponseHealth:
+      type: object
+      required: [code, message, data]
+      properties:
+        code: { type: integer, example: 0 }
+        message: { type: string, example: success }
+        data:
+          type: object
+          required: [status, service]
+          properties:
+            status: { type: string, example: UP }
+            service: { type: string, example: smart-expiry-server }
+    ApiResponseItem:
+      type: object
+      required: [code, message, data]
+      properties:
+        code: { type: integer, example: 0 }
+        message: { type: string, example: success }
+        data: { $ref: '#/components/schemas/ItemResponse' }
+    ApiError:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: integer }
+        message: { type: string }
+        data: { nullable: true }
+    Category:
+      type: object
+      required: [id, name, type]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        type: { type: string, enum: [FOOD, COSMETICS, PET_FOOD, OTHER] }
+    CreateItemRequest:
+      type: object
+      required: [name, categoryId]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        categoryId: { type: string }
+        brand: { type: string, maxLength: 120 }
+        quantity: { type: number, minimum: 0, default: 1 }
+        unit: { type: string, maxLength: 32 }
+        productionDate: { type: string, format: date }
+        expiryDate: { type: string, format: date }
+        shelfLifeValue: { type: integer, minimum: 1 }
+        shelfLifeUnit: { $ref: '#/components/schemas/ShelfLifeUnit' }
+        openedDate: { type: string, format: date }
+        afterOpenValue: { type: integer, minimum: 1 }
+        afterOpenUnit: { $ref: '#/components/schemas/ShelfLifeUnit' }
+    UpdateItemRequest:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        categoryId: { type: string }
+        brand: { type: string, maxLength: 120 }
+        quantity: { type: number, minimum: 0 }
+        unit: { type: string, maxLength: 32 }
+        productionDate: { type: string, format: date }
+        expiryDate: { type: string, format: date }
+        shelfLifeValue: { type: integer, minimum: 1 }
+        shelfLifeUnit: { $ref: '#/components/schemas/ShelfLifeUnit' }
+        openedDate: { type: string, format: date }
+        afterOpenValue: { type: integer, minimum: 1 }
+        afterOpenUnit: { $ref: '#/components/schemas/ShelfLifeUnit' }
+    ItemResponse:
+      type: object
+      required:
+        - id
+        - name
+        - categoryId
+        - lifecycleStatus
+        - quantity
+        - expiryStatus
+        - createdAt
+        - updatedAt
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        categoryId: { type: string }
+        brand: { type: [string, 'null'] }
+        lifecycleStatus: { type: string, enum: [ACTIVE, CONSUMED, DISCARDED, ARCHIVED] }
+        quantity: { type: number }
+        unit: { type: [string, 'null'] }
+        productionDate: { type: [string, 'null'], format: date }
+        expiryDate: { type: [string, 'null'], format: date }
+        effectiveExpiryDate: { type: [string, 'null'], format: date }
+        remainingDays: { type: [integer, 'null'] }
+        expiryStatus: { type: string, enum: [UNKNOWN, NORMAL, NEAR_EXPIRY, EXPIRED] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    ShelfLifeUnit:
+      type: string
+      enum: [DAY, MONTH, YEAR]
