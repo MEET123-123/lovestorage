@@ -72,7 +72,7 @@
         <directory>src/test/resources</directory>
       </testResource>
       <testResource>
-        <directory>../shared</directory>
+        <directory>${project.basedir}/shared</directory>
         <targetPath>shared</targetPath>
       </testResource>
     </testResources>
