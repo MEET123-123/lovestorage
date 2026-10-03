@@ -1,5 +1,6 @@
 import { common } from '@kit.AbilityKit';
 import { relationalStore } from '@kit.ArkData';
+import { InventoryBatch } from '../../domain/Item';
 
 export class AppDatabase {
   private static context?: common.UIAbilityContext;
@@ -53,6 +54,28 @@ export class AppDatabase {
       }
     }
     await store.executeSql('CREATE TABLE IF NOT EXISTS setting (key TEXT PRIMARY KEY, value TEXT NOT NULL)');
+    if (store.version < 2) {
+      store.beginTransaction();
+      try {
+        await store.executeSql("ALTER TABLE item ADD COLUMN metadata TEXT NOT NULL DEFAULT '{}'");
+        await store.executeSql('CREATE TABLE inventory_batch (id TEXT PRIMARY KEY, item_id TEXT NOT NULL UNIQUE REFERENCES item(id), payload TEXT NOT NULL)');
+        const legacy = await store.querySql('SELECT id, expiry_date FROM item');
+        try {
+          while (legacy.goToNextRow()) {
+            const id = legacy.getString(0);
+            const batch: InventoryBatch = { expiryDate: legacy.isColumnNull(1) ? undefined : legacy.getString(1), quantity: 1, unit: '件' };
+            await store.executeSql('INSERT INTO inventory_batch(id, item_id, payload) VALUES (?, ?, ?)', [id, id, JSON.stringify(batch)]);
+          }
+        } finally { legacy.close(); }
+        await store.executeSql('CREATE TABLE consumption_record (id TEXT PRIMARY KEY, item_id TEXT NOT NULL, name TEXT NOT NULL, action TEXT NOT NULL, quantity REAL NOT NULL, created_at INTEGER NOT NULL, revoked INTEGER NOT NULL DEFAULT 0)');
+        await store.executeSql('CREATE TABLE shopping_entry (id TEXT PRIMARY KEY, name TEXT NOT NULL, done INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL)');
+        store.version = 2;
+        store.commit();
+      } catch (error) {
+        store.rollBack();
+        throw new Error(String(error));
+      }
+    }
     AppDatabase.store = store;
     return store;
   }

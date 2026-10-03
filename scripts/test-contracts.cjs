@@ -46,7 +46,9 @@ async function main() {
       return { responseCode: result.status, result: await result.text() };
     } })
   };
-  const { ApiClient } = load('harmonyos/entry/src/main/ets/data/remote/ApiClient.ets', { '@kit.NetworkKit': { http } });
+  const { ApiClient } = load('harmonyos/entry/src/main/ets/data/remote/ApiClient.ets', {
+    '@kit.NetworkKit': { http }, '../../domain/ExpiryService': { ExpiryService }
+  });
   ApiClient.baseUrl = url;
   await ApiClient.health();
   const id = randomUUID();
@@ -55,10 +57,14 @@ async function main() {
     await ApiClient.upload(item, id);
     await ApiClient.upload(item, id);
     item.name = 'Updated contract smoke'; item.lifecycleStatus = 'CONSUMED';
+    item.quantity = 3; item.unit = 'box';
+    item.openedDate = '2026-10-01'; item.afterOpenValue = 2; item.afterOpenUnit = 'DAY';
     await ApiClient.upload(item, id);
     const detail = JSON.parse(await ApiClient.request(`/items/${id}`, 'GET')).data;
     assert.equal(detail.name, item.name); assert.equal(detail.lifecycleStatus, 'CONSUMED');
     assert.ok(detail.expiryStatus);
+    assert.equal(detail.quantity, 3); assert.equal(detail.unit, 'box');
+    assert.equal(detail.expiryDate, '2026-10-03');
   } finally {
     item.deletedAt = Date.now();
     await ApiClient.upload(item, id);

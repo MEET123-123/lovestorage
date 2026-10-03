@@ -1,6 +1,6 @@
 {
   "string": [
-    { "name": "module_desc", "value": "智能保质期 M1" },
+    { "name": "module_desc", "value": "智能保质期 · 本地库存与到期管理" },
     { "name": "entry_desc", "value": "智能保质期入口" },
     { "name": "entry_label", "value": "智能保质期" }
   ]

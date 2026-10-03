@@ -1,5 +1,6 @@
 import { http } from '@kit.NetworkKit';
 import { Item } from '../../domain/Item';
+import { ExpiryService, ShelfLifeUnit } from '../../domain/ExpiryService';
 
 interface Envelope { code: number; message: string; }
 interface ItemPayload {
@@ -8,6 +9,8 @@ interface ItemPayload {
   categoryId: string;
   expiryDate?: string;
   lifecycleStatus: string;
+  quantity: number;
+  unit: string;
 }
 
 export class ApiClient {
@@ -40,7 +43,8 @@ export class ApiClient {
     }
     const payload: ItemPayload = {
       clientId: remoteId, name: item.name, categoryId: item.categoryId,
-      expiryDate: item.expiryDate, lifecycleStatus: item.lifecycleStatus
+      expiryDate: new ExpiryService().effectiveExpiryDate(item.expiryDate, item.openedDate, item.afterOpenValue, item.afterOpenUnit as ShelfLifeUnit | undefined),
+      lifecycleStatus: item.lifecycleStatus, quantity: item.quantity ?? 1, unit: item.unit ?? '件'
     };
     // Stable client ID makes retry safe. PUT alias works on HarmonyOS API 20.
     await ApiClient.request('/items', http.RequestMethod.POST, payload);

@@ -1,245 +1,212 @@
 import { util } from '@kit.ArkTS';
-import { Item } from '../domain/Item';
-import { ExpiryService, ExpiryStatus } from '../domain/ExpiryService';
+import { Item, ConsumptionRecord, ShoppingEntry } from '../domain/Item';
+import { InventoryDomain } from '../domain/InventoryDomain';
 import { ItemLocalRepository } from '../data/local/ItemLocalRepository';
 import { ApiClient } from '../data/remote/ApiClient';
+import { ReminderService } from '../reminder/ReminderService';
+import { HomePanel } from '../features/HomePanel';
+import { InventoryPanel } from '../features/InventoryPanel';
+import { ItemEditor } from '../features/ItemEditor';
+import { ItemDetail } from '../features/ItemDetail';
+import { SuggestionsPanel } from '../features/SuggestionsPanel';
+import { StatisticsPanel } from '../features/StatisticsPanel';
+import { ProfilePanel } from '../features/ProfilePanel';
 
 @Entry
 @Component
 struct Index {
   @State private items: Item[] = [];
-  @State private message: string = '正在读取本地库存…';
-  @State private name: string = '';
-  @State private expiry: string = '';
-  @State private category: number = 0;
-  @State private editingId: string = '';
-  @State private search: string = '';
-  @State private server: string = '';
+  @State private records: ConsumptionRecord[] = [];
+  @State private shopping: ShoppingEntry[] = [];
+  @State private tab: number = 0;
+  @State private screen: string = 'main';
+  @State private selectedId: string = '';
+  @State private editorItem: Item = { id: '', name: '', categoryId: 'food', lifecycleStatus: 'ACTIVE', createdAt: 0, updatedAt: 0 };
+  @State private textMode: boolean = false;
+  @State private category: string = 'all';
+  @State private status: string = 'ACTIVE';
+  @State private inventoryQuery: string = '';
+  @State private inventoryOrder: number = 0;
+  @State private message: string = '';
   @State private busy: boolean = false;
-  @State private showForm: boolean = false;
-  @State private showSettings: boolean = false;
+  @State private ready: boolean = false;
+  @State private today: string = InventoryDomain.today();
+  @State private server: string = '';
   @State private pending: number = 0;
+  @State private lastSync: string = '';
+  @State private reminderEnabled: boolean = false;
+  @State private reminderStatus: string = '';
   private readonly repository: ItemLocalRepository = new ItemLocalRepository();
-  private readonly expiryService: ExpiryService = new ExpiryService();
-  private readonly categoryIds: string[] = ['food', 'cosmetics', 'pet_food', 'other'];
-  private readonly categoryNames: string[] = ['食品', '化妆品', '宠物粮', '其他'];
-
-  aboutToAppear(): void { this.initialize(); }
-
+  private timer: number = -1;
+  aboutToAppear(): void {
+    this.initialize();
+    this.timer = setInterval(() => { const date = InventoryDomain.today(); if (date !== this.today) this.today = date; }, 60000);
+  }
+  aboutToDisappear(): void { if (this.timer >= 0) clearInterval(this.timer); }
+  onPageShow(): void { this.today = InventoryDomain.today(); }
+  onBackPress(): boolean {
+    if (this.screen !== 'main') { this.back(); return true; }
+    if (this.tab !== 0) { this.tab = 0; return true; }
+    return false;
+  }
   private async initialize(): Promise<void> {
-    try {
+    await this.run(async () => {
       this.server = await this.repository.getServer();
-      await this.reload();
-      this.message = '本地优先 · 无网络也可管理库存';
-    } catch (error) { this.message = `初始化失败：${String(error)}`; }
+      this.lastSync = await this.repository.getSetting('last_sync');
+      this.reminderEnabled = (await this.repository.getSetting('reminders', 'false')) === 'true';
+      await this.reload(); this.ready = true;
+    }, '');
   }
-
   private async reload(): Promise<void> {
-    this.items = await this.repository.listActive();
-    this.pending = (await this.repository.listPending()).length;
+    this.items = await this.repository.listActive(); this.records = await this.repository.records();
+    this.shopping = await this.repository.shopping(); this.pending = (await this.repository.listPending()).length;
+    this.today = InventoryDomain.today();
   }
-
-  private todayIso(): string {
-    const date = new Date();
-    return `${date.getFullYear()}-${`${date.getMonth() + 1}`.padStart(2, '0')}-${`${date.getDate()}`.padStart(2, '0')}`;
+  private async refreshReminders(): Promise<void> {
+    if (!this.reminderEnabled) return;
+    try { this.reminderStatus = await ReminderService.rebuild(this.items); }
+    catch (error) { this.reminderStatus = `系统提醒未完整注册，首页待办仍有效：${String(error)}`; }
   }
-
-  private validDate(text: string): boolean {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return false;
-    const parts = text.split('-').map((v: string) => Number(v));
-    if (parts[0] < 1900 || parts[0] > 9999) return false;
-    const date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
-    return date.getUTCFullYear() === parts[0] && date.getUTCMonth() === parts[1] - 1 && date.getUTCDate() === parts[2];
-  }
-
-  private startAdd(): void {
-    this.editingId = ''; this.name = ''; this.expiry = ''; this.category = 0; this.showForm = true;
-  }
-
-  private edit(item: Item): void {
-    this.editingId = item.id; this.name = item.name; this.expiry = item.expiryDate ?? '';
-    this.category = Math.max(0, this.categoryIds.indexOf(item.categoryId)); this.showForm = true;
-  }
-
-  private async save(): Promise<void> {
+  private async run(action: () => Promise<void>, message: string, rebuild: boolean = true): Promise<void> {
     if (this.busy) return;
-    if (this.name.trim().length === 0 || this.name.trim().length > 80) {
-      this.message = '请输入 1–80 字的物品名称'; return;
-    }
-    if (!this.validDate(this.expiry.trim())) {
-      this.message = '请输入真实到期日期，例如 2026-10-09'; return;
-    }
     this.busy = true;
-    try {
-      const existing = this.items.find((row: Item) => row.id === this.editingId);
-      const now = Date.now();
-      const item: Item = {
-        id: existing === undefined ? util.generateRandomUUID() : existing.id,
-        name: this.name.trim(), categoryId: this.categoryIds[this.category], expiryDate: this.expiry.trim(),
-        lifecycleStatus: existing === undefined ? 'ACTIVE' : existing.lifecycleStatus,
-        createdAt: existing === undefined ? now : existing.createdAt, updatedAt: now
-      };
-      if (existing === undefined) await this.repository.create(item);
+    try { await action(); await this.reload(); if (rebuild) await this.refreshReminders(); this.message = message; }
+    catch (error) { this.message = `操作未完成，本地已保存的数据会保留：${String(error)}`; }
+    finally { this.busy = false; }
+  }
+  private selected(): Item { return this.items.find((i: Item) => i.id === this.selectedId) ?? this.editorItem; }
+  private browse(status: string, category: string): void { this.status = status; this.category = category; this.inventoryQuery = ''; this.inventoryOrder = 0; this.tab = 1; }
+  private open(item: Item): void { this.selectedId = item.id; this.editorItem = item; this.screen = 'detail'; }
+  private add(textMode: boolean = false): void {
+    this.editorItem = { id: '', name: '', categoryId: 'food', lifecycleStatus: 'ACTIVE', createdAt: 0, updatedAt: 0 };
+    this.textMode = textMode; this.screen = 'editor';
+  }
+  private edit(): void { this.editorItem = this.selected(); this.textMode = false; this.screen = 'editor'; }
+  private back(): void {
+    if (this.busy) return;
+    if (this.screen === 'editor') AlertDialog.show({ title: '离开编辑？', message: '尚未保存的修改不会保留。',
+      primaryButton: { value: '继续编辑', action: () => {} }, secondaryButton: { value: '离开', action: () => { this.screen = this.editorItem.id ? 'detail' : 'main'; } } });
+    else this.screen = 'main';
+  }
+  private async save(item: Item): Promise<void> {
+    await this.run(async () => {
+      const error = InventoryDomain.validate(item); if (error) throw new Error(error);
+      if (!item.id) { item.id = util.generateRandomUUID(); item.createdAt = Date.now(); item.updatedAt = item.createdAt; await this.repository.create(item); }
       else await this.repository.update(item);
-      await this.reload(); this.showForm = false;
-      this.message = '已保存到本机，可点击同步上传到后端';
-    } catch (error) { this.message = `保存失败：${String(error)}`; }
-    finally { this.busy = false; }
+      this.selectedId = item.id; this.editorItem = item; this.screen = 'detail';
+    }, '已保存到本机');
   }
-
-  private async changeStatus(item: Item, status: string): Promise<void> {
-    if (this.busy) return;
-    this.busy = true;
-    try {
-      const updated: Item = {
-        id: item.id, name: item.name, categoryId: item.categoryId, expiryDate: item.expiryDate,
-        lifecycleStatus: status, createdAt: item.createdAt, updatedAt: Date.now()
-      };
-      await this.repository.update(updated); await this.reload(); this.message = '处理状态已保存';
-    } catch (error) { this.message = `操作失败：${String(error)}`; }
-    finally { this.busy = false; }
+  private async changeLifecycle(status: string): Promise<void> {
+    await this.run(async () => { await this.repository.transition(this.selected(), status); }, status === 'ACTIVE' ? '已恢复在库，对应处理统计已撤销' : '状态和处理记录已保存');
   }
-
-  private async remove(item: Item): Promise<void> {
-    if (this.busy) return;
-    this.busy = true;
-    try {
-      await this.repository.softDelete(item.id); await this.reload(); this.message = '已删除，等待同步';
-    } catch (error) { this.message = `删除失败：${String(error)}`; }
-    finally { this.busy = false; }
+  private async remove(): Promise<void> {
+    await this.run(async () => { await this.repository.softDelete(this.selectedId); this.screen = 'main'; }, '物品已移除');
   }
-
-  private async sync(): Promise<void> {
+  private async snooze(): Promise<void> {
+    await this.run(async () => {
+      const item = JSON.parse(JSON.stringify(this.selected())) as Item;
+      const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1); item.snoozeUntil = InventoryDomain.dateText(tomorrow);
+      await this.repository.update(item);
+    }, '已安排明天再处理，到期日期保持不变');
+  }
+  private address(url: string): string {
+    const clean = url.trim().replace(/\/+$/, '');
+    if (!/^https?:\/\/[^\s/?#]+$/.test(clean)) throw new Error('请输入服务地址，例如 http://192.168.1.10:18080');
+    return clean;
+  }
+  private async saveServer(url: string): Promise<void> {
+    await this.run(async () => { const clean = this.address(url); await this.repository.setServer(clean); this.server = clean; }, '地址已保存，可点击同步上传', false);
+  }
+  private async sync(url: string): Promise<void> {
     if (this.busy) return;
-    const url = this.server.trim().replace(/\/+$/, '');
-    if (!/^https?:\/\/[^\s/]+(:\d+)?$/.test(url)) {
-      this.message = '请填写服务地址，例如 http://192.168.1.10:8080'; this.showSettings = true; return;
-    }
-    this.busy = true;
+    this.busy = true; let completed = 0;
     try {
-      ApiClient.baseUrl = url;
-      await ApiClient.health();
-      await this.repository.setServer(url);
-      this.server = url;
+      ApiClient.baseUrl = this.address(url); await ApiClient.health(); await this.repository.setServer(ApiClient.baseUrl); this.server = ApiClient.baseUrl;
       const queue = await this.repository.listPending();
-      let completed = 0;
       for (const item of queue) {
-        const remoteId = await this.repository.ensureRemoteId(item);
-        await ApiClient.upload(item, remoteId);
-        await this.repository.acknowledge(item);
-        completed++;
+        const id = await this.repository.ensureRemoteId(item); await ApiClient.upload(item, id); await this.repository.acknowledge(item); completed++;
+        this.message = `正在上传 ${completed}/${queue.length}`;
       }
-      await this.reload(); this.message = `后端连接正常，已同步 ${completed} 条本机修改`;
+      this.lastSync = `${InventoryDomain.today()} ${new Date().toLocaleTimeString()}`; await this.repository.setSetting('last_sync', this.lastSync);
+      await this.reload(); this.message = `已上传 ${completed} 条核心记录，扩展信息保留在本机`;
     } catch (error) {
-      this.message = `同步未完成，本地数据已保留：${String(error)}`;
-      try { await this.reload(); } catch (reloadError) { this.message += `；${String(reloadError)}`; }
+      this.message = `已上传 ${completed} 条，其余保留待重试：${String(error)}`;
+      try { await this.reload(); } catch (ignored) { /* Preserve the sync error. */ }
     } finally { this.busy = false; }
   }
-
-  private expiryLabel(item: Item): string {
-    if (item.lifecycleStatus === 'CONSUMED') return '已用完';
-    if (item.lifecycleStatus === 'DISCARDED') return '已丢弃';
-    if (item.lifecycleStatus === 'ARCHIVED') return '已归档';
-    const result = this.expiryService.evaluate(item.expiryDate, undefined, undefined, undefined, 7, this.todayIso());
-    if (result.status === ExpiryStatus.UNKNOWN) return '待补充日期';
-    if (result.status === ExpiryStatus.EXPIRED) return `已过期 ${Math.abs(result.remainingDays ?? 0)} 天`;
-    if (result.remainingDays === 0) return '今天到期';
-    if (result.status === ExpiryStatus.NEAR_EXPIRY) return `临期 · 剩余 ${result.remainingDays} 天`;
-    return `剩余 ${result.remainingDays} 天`;
+  private async reminders(enabled: boolean): Promise<void> {
+    await this.run(async () => {
+      if (enabled) { await ReminderService.enable(); await this.repository.setSetting('reminders', 'true'); this.reminderEnabled = true; }
+      else { await ReminderService.clear(); await this.repository.setSetting('reminders', 'false'); this.reminderEnabled = false; this.reminderStatus = '系统提醒已关闭，应用内待办继续显示'; }
+    }, '提醒偏好已保存');
   }
-
-  private count(status: string): number {
-    return this.items.filter((item: Item) => item.lifecycleStatus === status).length;
+  private async shoppingAction(action: string, name: string = '', entry?: ShoppingEntry): Promise<void> {
+    await this.run(async () => {
+      if (action === 'add') await this.repository.addShopping(name);
+      else if (action === 'toggle' && entry) await this.repository.toggleShopping(entry);
+      else if (action === 'remove') await this.repository.removeShopping(name);
+    }, action === 'add' ? '已加入补货清单，相同待购物品自动去重' : '补货清单已更新', false);
   }
-
-  private urgentCount(): number {
-    return this.items.filter((item: Item) => {
-      if (item.lifecycleStatus !== 'ACTIVE') return false;
-      const result = this.expiryService.evaluate(item.expiryDate, undefined, undefined, undefined, 7, this.todayIso());
-      return result.status === ExpiryStatus.NEAR_EXPIRY || result.status === ExpiryStatus.EXPIRED;
-    }).length;
+  @Builder
+  private nav(label: string, mark: string, index: number) {
+    Column({ space: 4 }) {
+      Text(mark).fontSize(23).fontColor(this.tab === index ? '#28785C' : '#9AA69D')
+      Text(label).fontSize(11).fontColor(this.tab === index ? '#28785C' : '#748078')
+    }.layoutWeight(1).height(55).justifyContent(FlexAlign.Center).onClick(() => { if (!this.busy) this.tab = index; })
   }
-
-  private visibleItems(): Item[] {
-    return this.items.filter((item: Item) => item.name.toLowerCase().includes(this.search.toLowerCase()));
-  }
-
   build() {
-    Column({ space: 12 }) {
-      Row() {
-        Column({ space: 4 }) {
-          Text('智能保质期').fontSize(28).fontWeight(FontWeight.Bold).fontColor('#173C32')
-          Text(`${this.todayIso()} · 珍惜每一份好物`).fontSize(12).fontColor('#63766D')
-        }.alignItems(HorizontalAlign.Start).layoutWeight(1)
-        Button('连接').onClick(() => { this.showSettings = !this.showSettings; }).enabled(!this.busy)
-      }.width('100%')
-      Row({ space: 12 }) {
-        Text(`在库 ${this.count('ACTIVE')}`).fontColor('#173C32')
-        Text(`待处理 ${this.urgentCount()}`).fontColor('#B55525')
-        Text(`用完 ${this.count('CONSUMED')} / 丢弃 ${this.count('DISCARDED')}`).fontSize(12)
-      }.width('100%').padding(12).backgroundColor('#E7F1EB').borderRadius(12)
-      Text(this.message).fontSize(13).fontColor('#53665E').width('100%')
-      if (this.showSettings) {
-        TextInput({ text: this.server, placeholder: 'http://开发机局域网IP:8080' })
-          .onChange((value: string) => { this.server = value; }).enabled(!this.busy)
-        Text('真机不能使用电脑的 localhost。同步仅上传本机修改，当前为单设备开发模式。')
-          .fontSize(12).fontColor('#63766D')
+    Column() {
+      if (this.screen !== 'main') {
+        Row() {
+          Text('‹ 返回').fontSize(16).fontColor('#28785C').onClick(() => this.back())
+          Blank()
+          Text(this.screen === 'editor' ? '物品录入' : this.screen === 'stats' ? '使用统计' : '物品详情').fontSize(13).fontColor('#748078')
+        }.width('100%').padding({ left: 20, right: 20, top: 12, bottom: 8 })
       }
-      Row({ space: 10 }) {
-        Button('＋ 手动录入').layoutWeight(1).backgroundColor('#28785C').onClick(() => this.startAdd()).enabled(!this.busy)
-        Button(this.busy ? '处理中…' : `同步 (${this.pending})`).layoutWeight(1).onClick(() => this.sync()).enabled(!this.busy)
+      if (this.message) {
+        Row({ space: 10 }) {
+          Text(this.message).fontSize(12).fontColor('#365A48').layoutWeight(1).maxLines(4)
+          Text('×').fontSize(19).fontColor('#748078').onClick(() => { this.message = ''; })
+        }.padding(12).width('100%').backgroundColor('#E1EDDE')
       }
-      if (this.showForm) {
-        Column({ space: 8 }) {
-          Text(this.editingId === '' ? '新增物品' : '编辑物品').fontWeight(FontWeight.Bold)
-          TextInput({ text: this.name, placeholder: '名称（必填）' }).maxLength(80)
-            .onChange((value: string) => { this.name = value; })
-          Select([{ value: '食品' }, { value: '化妆品' }, { value: '宠物粮' }, { value: '其他' }])
-            .selected(this.category).value(this.categoryNames[this.category])
-            .onSelect((index: number) => { this.category = index; })
-          TextInput({ text: this.expiry, placeholder: '到期日期 YYYY-MM-DD' })
-            .onChange((value: string) => { this.expiry = value; })
-          Row({ space: 12 }) {
-            Button('取消').onClick(() => { this.showForm = false; }).enabled(!this.busy)
-            Button('保存到本机').onClick(() => this.save()).enabled(!this.busy)
-          }
-        }.width('100%').padding(12).backgroundColor('#FFFFFF').borderRadius(12)
+      if (!this.ready) {
+        Column({ space: 20 }) {
+          Text(this.busy ? '正在打开你的好物清单…' : '暂时无法读取本地数据').fontColor('#63766D')
+          if (!this.busy) { Button('重试').onClick(() => this.initialize()) }
+        }.layoutWeight(1).justifyContent(FlexAlign.Center)
+      } else if (this.screen === 'editor') {
+        ItemEditor({ item: this.editorItem, busy: this.busy, textMode: this.textMode, onSave: (item: Item) => { this.save(item); } })
+      } else if (this.screen === 'detail') {
+        ItemDetail({ item: this.selected(), records: this.records, today: this.today, busy: this.busy,
+          onEdit: () => this.edit(), onTransition: (status: string) => { this.changeLifecycle(status); }, onDelete: () => { this.remove(); },
+          onSnooze: () => { this.snooze(); }, onShopping: () => { this.shoppingAction('add', this.selected().name); } })
+      } else if (this.screen === 'stats') {
+        StatisticsPanel({ items: this.items, records: this.records, today: this.today })
       } else {
-        TextInput({ text: this.search, placeholder: '搜索物品名称' })
-          .onChange((value: string) => { this.search = value; })
-        if (this.visibleItems().length === 0) {
-          Text(this.items.length === 0 ? '还没有物品，点击手动录入开始。' : '没有匹配的物品')
-            .fontColor('#63766D').padding(20)
+        if (this.tab === 0) {
+          HomePanel({ items: this.items, records: this.records, today: this.today, onOpen: (item: Item) => this.open(item),
+            onBrowse: (status: string, category: string) => this.browse(status, category), onAdd: () => this.add(), onText: () => this.add(true), onStats: () => { this.screen = 'stats'; } })
+        } else if (this.tab === 1) {
+          InventoryPanel({ items: this.items, today: this.today, initialCategory: this.category, initialStatus: this.status,
+            initialQuery: this.inventoryQuery, initialOrder: this.inventoryOrder,
+            onFilter: (query: string, category: string, status: string, order: number) => { this.inventoryQuery = query; this.category = category; this.status = status; this.inventoryOrder = order; },
+            onOpen: (item: Item) => this.open(item), onAdd: () => this.add() })
+        } else if (this.tab === 2) {
+          SuggestionsPanel({ items: this.items, shopping: this.shopping, today: this.today, busy: this.busy, onOpen: (item: Item) => this.open(item),
+            onAdd: (name: string) => { this.shoppingAction('add', name); }, onToggle: (entry: ShoppingEntry) => { this.shoppingAction('toggle', '', entry); }, onRemove: (id: string) => { this.shoppingAction('remove', id); } })
+        } else {
+          ProfilePanel({ server: this.server, pending: this.pending, busy: this.busy, reminderEnabled: this.reminderEnabled, reminderStatus: this.reminderStatus,
+            lastSync: this.lastSync, onSaveServer: (url: string) => { this.saveServer(url); }, onSync: (url: string) => { this.sync(url); },
+            onStats: () => { this.screen = 'stats'; }, onReminder: (enabled: boolean) => { this.reminders(enabled); } })
         }
-        List({ space: 10 }) {
-          ForEach(this.visibleItems(), (item: Item) => {
-            ListItem() {
-              Column({ space: 8 }) {
-                Row() {
-                  Text(item.name).fontSize(19).fontWeight(FontWeight.Medium).layoutWeight(1)
-                  Text(this.expiryLabel(item)).fontSize(12).fontColor('#28785C')
-                }.width('100%')
-                Text(`${this.categoryNames[Math.max(0, this.categoryIds.indexOf(item.categoryId))]} · 到期 ${item.expiryDate ?? '未填写'}${item.pending === 1 ? ' · 待同步' : ''}`)
-                  .fontSize(12).fontColor('#63766D').width('100%')
-                Row({ space: 6 }) {
-                  Button('编辑').fontSize(12).onClick(() => this.edit(item)).enabled(!this.busy)
-                  if (item.lifecycleStatus === 'ACTIVE') {
-                    Button('用完').fontSize(12).onClick(() => this.changeStatus(item, 'CONSUMED')).enabled(!this.busy)
-                    Button('丢弃').fontSize(12).onClick(() => this.changeStatus(item, 'DISCARDED')).enabled(!this.busy)
-                  } else {
-                    Button('恢复在库').fontSize(12).onClick(() => this.changeStatus(item, 'ACTIVE')).enabled(!this.busy)
-                  }
-                  Button('删除').fontSize(12).fontColor('#A33F3F').onClick(() => {
-                    AlertDialog.show({ title: '删除物品', message: `确定删除「${item.name}」？`,
-                      primaryButton: { value: '取消', action: () => {} },
-                      secondaryButton: { value: '删除', action: () => { this.remove(item); } } });
-                  }).enabled(!this.busy)
-                }
-              }.padding(14).width('100%').backgroundColor('#FFFFFF').borderRadius(14)
-            }
-          }, (item: Item) => `${item.id}-${item.updatedAt}-${item.pending}`)
-        }.layoutWeight(1).width('100%')
+        Row() {
+          this.nav('首页', '⌂', 0)
+          this.nav('物品', '▤', 1)
+          Button('＋').width(48).height(48).fontSize(25).backgroundColor('#28785C').enabled(!this.busy).onClick(() => this.add())
+          this.nav('建议', '✧', 2)
+          this.nav('我的', '◉', 3)
+        }.width('100%').padding({ left: 8, right: 8, top: 6, bottom: 12 }).backgroundColor('#FFFFFF')
       }
-    }.width('100%').height('100%').padding({ top: 36, left: 18, right: 18, bottom: 24 }).backgroundColor('#F4F7F3')
+    }.width('100%').height('100%').padding({ top: 28 }).backgroundColor('#F4F6F0')
   }
 }
