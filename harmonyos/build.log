@@ -1,0 +1,308 @@
+[32minstall completed in 0s 56ms[39m
+> hvigor [32mTYPE CHECK SUCCESSFUL in 216 ms [39m
+> hvigor WARN: The version number of the 'entry' module does not comply with the SemVer specification.
+               This will affect the installation and publication by ohpm.
+               Make sure the value of version in the oh-package.json5 file of the module complies with the SemVer specification.
+> hvigor [32mFinished :entry:default@PreBuild... after 116 ms [39m
+> hvigor [32mFinished :entry:default@CreateModuleInfo... after 1 ms [39m
+> hvigor [32mUP-TO-DATE :entry:default@GenerateMetadata...  [39m
+> hvigor [32mFinished :entry:default@ConfigureCmake... after 1 ms [39m
+> hvigor [32mFinished :entry:default@MergeProfile... after 24 ms [39m
+> hvigor [32mFinished :entry:default@CreateBuildProfile... after 2 ms [39m
+> hvigor [32mFinished :entry:default@PreCheckSyscap... after 1 ms [39m
+> hvigor [32mFinished :entry:default@GeneratePkgContextInfo... after 6 ms [39m
+> hvigor [32mUP-TO-DATE :entry:default@GeneratePkgSdkInfo...  [39m
+> hvigor [32mFinished :entry:default@ProcessIntegratedHsp... after 1 ms [39m
+> hvigor [32mFinished :entry:default@BuildNativeWithCmake... after 1 ms [39m
+> hvigor [32mFinished :entry:default@MakePackInfo... after 3 ms [39m
+> hvigor [32mFinished :entry:default@SyscapTransform... after 9 ms [39m
+> hvigor [32mFinished :entry:default@ProcessProfile... after 72 ms [39m
+> hvigor [32mUP-TO-DATE :entry:default@ProcessRouterMap...  [39m
+> hvigor [32mUP-TO-DATE :entry:default@ProcessShareConfig...  [39m
+> hvigor [32mFinished :entry:default@ProcessStartupConfig... after 1 ms [39m
+> hvigor [32mFinished :entry:default@BuildNativeWithNinja... after 1 ms [39m
+> hvigor [32mUP-TO-DATE :entry:default@ProcessResource...  [39m
+> hvigor [32mUP-TO-DATE :entry:default@GenerateLoaderJson...  [39m
+> hvigor [32mUP-TO-DATE :entry:default@ProcessLibs...  [39m
+> hvigor [32mFinished :entry:default@CompileResource... after 214 ms [39m
+> hvigor [32mUP-TO-DATE :entry:default@DoNativeStrip...  [39m
+> hvigor [32mFinished :entry:default@BuildJS... after 2 ms [39m
+> hvigor [32mUP-TO-DATE :entry:default@CacheNativeLibs...  [39m
+> hvigor WARN: WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/AppDatabase.ets:33:41
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/AppDatabase.ets:34:17
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/AppDatabase.ets:45:13
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/AppDatabase.ets:52:15
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/AppDatabase.ets:56:17
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/AppDatabase.ets:58:13
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/AppDatabase.ets:75:15
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/reminder/ReminderService.ets:12:31
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/reminder/ReminderService.ets:14:68
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/reminder/ReminderService.ets:17:32
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/entryability/EntryAbility.ets:13:17
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:24:11
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:29:29
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:35:32
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:39:21
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:40:36
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:41:37
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:42:36
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:43:35
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:44:40
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:44:57
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:45:46
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:45:96
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:47:22
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:47:39
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:47:75
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:47:92
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:48:30
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:48:47
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:49:51
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:49:98
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:50:35
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:50:52
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:51:29
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:51:44
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:51:93
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:51:108
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:52:29
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:52:77
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:53:28
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:53:75
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:53:115
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:53:130
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:60:24
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:70:11
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:75:29
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:81:11
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:92:29
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:96:28
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:99:17
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:99:51
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:99:76
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:99:99
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:99:124
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:100:22
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:100:50
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:100:74
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:101:20
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:106:17
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:113:17
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:119:17
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:123:28
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:124:21
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:124:41
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:124:81
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:128:17
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:134:58
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:139:28
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:141:21
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:141:55
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:141:78
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:141:101
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:141:127
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:142:18
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:149:28
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:151:23
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:151:54
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:152:30
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:156:17
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/local/ItemLocalRepository.ets:160:17
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/data/remote/ApiClient.ets:22:37
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/features/ItemEditor.ets:84:22
+ 'show' has been deprecated.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/features/ItemDetail.ets:59:15
+ 'AlertDialog' has been deprecated.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/features/ItemDetail.ets:59:27
+ 'show' has been deprecated.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/features/ItemDetail.ets:78:27
+ 'AlertDialog' has been deprecated.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/features/ItemDetail.ets:78:39
+ 'show' has been deprecated.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/pages/Index.ets:87:35
+ 'AlertDialog' has been deprecated.
+
+WARN: ArkTS:WARN File: D:/Src/append/harmonyos/entry/src/main/ets/pages/Index.ets:87:47
+ 'show' has been deprecated.
+
+
+> hvigor [32mFinished :entry:default@CompileArkTS... after 2 s 532 ms [39m
+> hvigor [32mFinished :entry:default@GeneratePkgModuleJson... after 2 ms [39m
+> hvigor [32mFinished :entry:default@ProcessCompiledResources... after 1 ms [39m
+> hvigor [32mFinished :entry:default@PackageHap... after 376 ms [39m
+> hvigor [32mFinished :entry:default@PackingCheck... after 4 ms [39m
+> hvigor WARN: Will skip sign 'hos_hap'. No signingConfigs profile is configured in current project.
+             If needed, configure the signingConfigs in D:\Src\append\harmonyos\build-profile.json5.
+> hvigor [32mFinished :entry:default@SignHap... after 2 ms [39m
+> hvigor [32mFinished :entry:default@CollectDebugSymbol... after 1 ms [39m
+> hvigor [32mFinished :entry:assembleHap... after 1 ms [39m
+> hvigor [32mBUILD SUCCESSFUL in 6 s 730 ms [39m
+
+33 tasks in total: 24 executed, 9 up-to-date
