@@ -87,3 +87,5 @@ Java `ExpiryServiceContractTest` 会直接读取该共享文件。前端通过 `
 - `feature/<topic>`：功能开发。
 - `fix/<topic>`：缺陷修复。
 - API 契约稳定点可创建 tag：`contract-vX.Y.Z`。
+
+版本设计、实际实现边界与历史变更见 [版本记录索引](docs/ChangeLog/README.md) 和 [工程变更记录](docs/ChangeLog/CHANGELOG.md)。
