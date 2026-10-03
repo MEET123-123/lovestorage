@@ -17,10 +17,16 @@ class ItemApiIntegrationTest {
     @LocalServerPort int port;
     private final HttpClient client = HttpClient.newHttpClient();
     private final JsonMapper json = JsonMapper.builder().build();
+    private String token = "";
+    @org.junit.jupiter.api.BeforeEach void login() throws Exception {
+        token = data(send("POST", "/auth/register", "{\"username\":\"u" + UUID.randomUUID().toString().replace("-", "").substring(0,20) + "\",\"password\":\"test-password-123\"}"))
+            .get("accessToken").asText();
+    }
 
     private HttpResponse<String> send(String method, String path, String body) throws Exception {
         return client.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/v1" + path))
             .header("Content-Type", "application/json")
+            .header("Authorization", "Bearer " + token)
             .method(method, body == null ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(body))
             .build(), HttpResponse.BodyHandlers.ofString());
     }
@@ -66,6 +72,8 @@ class ItemApiIntegrationTest {
         }) assertThat(send("POST", "/items", body).statusCode()).isEqualTo(400);
         String id = create();
         assertThat(send("PATCH", "/items/" + id, "{\"name\":\" \",\"lifecycleStatus\":\"DISCARDED\"}").statusCode()).isEqualTo(400);
+        for (String invalid : new String[]{"{\"quantity\":0}", "{\"quantity\":1.0001}", "{\"quantity\":1000000000}", "{\"shelfLifeValue\":1201}", "{\"afterOpenValue\":2,\"afterOpenUnit\":\"DAY\"}"})
+            assertThat(send("PATCH", "/items/" + id, invalid).statusCode()).isEqualTo(400);
         assertThat(data(send("GET", "/items/" + id, null)).get("lifecycleStatus").asText()).isEqualTo("ACTIVE");
         assertThat(send("PATCH", "/items/" + id, "{\"expiryDate\":\"2020-01-01\"}").statusCode()).isEqualTo(400);
     }

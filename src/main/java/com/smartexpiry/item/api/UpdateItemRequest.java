@@ -13,13 +13,13 @@ public record UpdateItemRequest(
     @Size(min = 1, max = 120) String name,
     String categoryId,
     @Size(min = 1, max = 120) String brand,
-    @PositiveOrZero BigDecimal quantity,
+    @Positive @jakarta.validation.constraints.Digits(integer=9, fraction=3) @jakarta.validation.constraints.DecimalMax("999999999") BigDecimal quantity,
     @Size(max = 32) String unit,
     LocalDate productionDate,
     LocalDate expiryDate,
-    @Positive Integer shelfLifeValue,
+    @Positive @jakarta.validation.constraints.Max(1200) Integer shelfLifeValue,
     ShelfLifeUnit shelfLifeUnit,
     LocalDate openedDate,
-    @Positive Integer afterOpenValue,
+    @Positive @jakarta.validation.constraints.Max(1200) Integer afterOpenValue,
     ShelfLifeUnit afterOpenUnit
 ) {}

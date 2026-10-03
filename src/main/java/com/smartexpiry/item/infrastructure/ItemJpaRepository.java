@@ -6,6 +6,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ItemJpaRepository extends JpaRepository<ItemEntity, String> {
-    List<ItemEntity> findByDeletedAtIsNullOrderByUpdatedAtDesc();
-    Optional<ItemEntity> findByIdAndDeletedAtIsNull(String id);
+    List<ItemEntity> findByOwnerIdAndDeletedAtIsNullOrderByUpdatedAtDesc(String ownerId);
+    Optional<ItemEntity> findByIdAndOwnerIdAndDeletedAtIsNull(String id, String ownerId);
 }

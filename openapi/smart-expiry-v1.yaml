@@ -1,13 +1,148 @@
 openapi: 3.1.0
 info:
   title: Smart Expiry API
-  version: 1.0.0-m1
-  description: M1 contract for health, categories and item CRUD.
+  version: 1.1.0-local
+  description: Authenticated local candidate with account inventory, revision-checked backups and deterministic recognition.
+security:
+  - bearerAuth: []
 servers:
   - url: http://localhost:8080
 paths:
+  /api/v1/auth/register:
+    post:
+      security: []
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Credentials' }
+      responses:
+        '200':
+          description: Registered; username normalized to lowercase. Session expires after 12 hours.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthEnvelope' }
+        '400': { description: Invalid credentials format }
+        '409': { description: Username already exists }
+        '429': { description: Auth request rate exceeded; retry after 60 seconds }
+  /api/v1/auth/login:
+    post:
+      security: []
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Credentials' }
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthEnvelope' }
+        '401': { description: Invalid credentials }
+        '429': { description: Auth request rate exceeded }
+  /api/v1/auth/me:
+    get:
+      operationId: currentUser
+      responses:
+        '200':
+          description: Current account
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  message: { type: string }
+                  data: { $ref: '#/components/schemas/User' }
+        '401': { description: Missing, expired or revoked token }
+  /api/v1/auth/logout:
+    post:
+      operationId: logout
+      responses:
+        '200': { description: Current token revoked; data is true }
+        '401': { description: Missing or expired token }
+  /api/v1/auth/password:
+    post:
+      operationId: changePassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword: { type: string, minLength: 12, maxLength: 64, writeOnly: true }
+                newPassword: { type: string, minLength: 12, maxLength: 64, writeOnly: true }
+      responses:
+        '200': { description: Password changed; all account sessions revoked; data is true }
+        '401': { description: Invalid session or current password }
+  /api/v1/backup:
+    get:
+      operationId: getBackup
+      responses:
+        '200':
+          description: Current account backup; revision 0 and empty payload if absent
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BackupEnvelope' }
+        '401': { description: Authentication required }
+    put:
+      operationId: saveBackup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expectedRevision, payload]
+              properties:
+                expectedRevision: { type: integer, format: int64, minimum: 0 }
+                payload:
+                  type: string
+                  minLength: 2
+                  maxLength: 500000
+                  description: JSON snapshot schemaVersion=1 with items, records, shopping arrays, each at most 10000 entries. App validates individual fields before restoration. Settings and credentials are excluded.
+      responses:
+        '200':
+          description: Stored atomically; revision incremented
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BackupEnvelope' }
+        '400': { description: Invalid snapshot }
+        '401': { description: Authentication required }
+        '409': { description: Stale revision; caller must not silently overwrite }
+  /api/v1/recognition/text:
+    post:
+      operationId: recognizeText
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: { type: string, minLength: 1, maxLength: 2000 }
+      responses:
+        '200':
+          description: Rule-generated draft only; never writes inventory. Missing or conflicting dates remain empty. Confidence indicates rule strength, not measured probability.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  message: { type: string }
+                  data: { $ref: '#/components/schemas/RecognitionDraft' }
+        '400': { description: Invalid text }
+        '401': { description: Authentication required }
   /api/v1/health:
     get:
+      security: []
       operationId: health
       tags: [System]
       responses:
@@ -137,7 +272,62 @@ paths:
                   message: { type: string, example: success }
                   data: { type: boolean, example: true }
 components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, description: Opaque token returned by register or login }
   schemas:
+    Credentials:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string, pattern: '^[A-Za-z0-9_]{3,32}$' }
+        password: { type: string, minLength: 12, maxLength: 64, writeOnly: true }
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string }
+    AuthEnvelope:
+      type: object
+      properties:
+        code: { type: integer }
+        message: { type: string }
+        data:
+          type: object
+          properties:
+            accessToken: { type: string }
+            expiresAt: { type: string, format: date-time }
+            user: { $ref: '#/components/schemas/User' }
+    BackupEnvelope:
+      type: object
+      properties:
+        code: { type: integer }
+        message: { type: string }
+        data:
+          type: object
+          properties:
+            revision: { type: integer, format: int64 }
+            payload: { type: string }
+            updatedAt: { type: [string, 'null'], format: date-time }
+    RecognitionDraft:
+      type: object
+      properties:
+        name: { type: string }
+        production: { type: string, description: YYYY-MM-DD or empty }
+        expiry: { type: string, description: YYYY-MM-DD or empty }
+        shelfLife: { type: string, description: Integer text or empty }
+        unit: { type: integer, enum: [0, 1, 2], description: Day / month / year }
+        requiresConfirmation: { type: boolean, const: true }
+        engineVersion: { type: string }
+        warnings: { type: array, items: { type: string } }
+        candidates:
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string, enum: [production, expiry] }
+              value: { type: string, format: date }
+              evidence: { type: string }
+              confidence: { type: number }
     ApiResponseHealth:
       type: object
       required: [code, message, data]
@@ -179,14 +369,14 @@ components:
         name: { type: string, minLength: 1, maxLength: 120 }
         categoryId: { type: string }
         brand: { type: string, maxLength: 120 }
-        quantity: { type: number, minimum: 0, default: 1 }
+        quantity: { type: number, exclusiveMinimum: 0, maximum: 999999999, multipleOf: 0.001, default: 1 }
         unit: { type: string, maxLength: 32 }
         productionDate: { type: string, format: date }
         expiryDate: { type: string, format: date }
-        shelfLifeValue: { type: integer, minimum: 1 }
+        shelfLifeValue: { type: integer, minimum: 1, maximum: 1200 }
         shelfLifeUnit: { $ref: '#/components/schemas/ShelfLifeUnit' }
         openedDate: { type: string, format: date }
-        afterOpenValue: { type: integer, minimum: 1 }
+        afterOpenValue: { type: integer, minimum: 1, maximum: 1200 }
         afterOpenUnit: { $ref: '#/components/schemas/ShelfLifeUnit' }
     UpdateItemRequest:
       type: object
@@ -195,14 +385,14 @@ components:
         name: { type: string, minLength: 1, maxLength: 120 }
         categoryId: { type: string }
         brand: { type: string, maxLength: 120 }
-        quantity: { type: number, minimum: 0 }
+        quantity: { type: number, exclusiveMinimum: 0, maximum: 999999999, multipleOf: 0.001 }
         unit: { type: string, maxLength: 32 }
         productionDate: { type: string, format: date }
         expiryDate: { type: string, format: date }
-        shelfLifeValue: { type: integer, minimum: 1 }
+        shelfLifeValue: { type: integer, minimum: 1, maximum: 1200 }
         shelfLifeUnit: { $ref: '#/components/schemas/ShelfLifeUnit' }
         openedDate: { type: string, format: date }
-        afterOpenValue: { type: integer, minimum: 1 }
+        afterOpenValue: { type: integer, minimum: 1, maximum: 1200 }
         afterOpenUnit: { $ref: '#/components/schemas/ShelfLifeUnit' }
     ItemResponse:
       type: object

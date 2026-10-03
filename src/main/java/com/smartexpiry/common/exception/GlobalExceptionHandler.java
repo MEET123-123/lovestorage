@@ -13,8 +13,20 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusiness(BusinessException ex) {
-        HttpStatus status = ex.getCode() == 300001 ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
+        HttpStatus status = ex.getCode() == 300001 ? HttpStatus.NOT_FOUND :
+            ex.getCode() == 200001 ? HttpStatus.UNAUTHORIZED : ex.getCode() == 100409 ? HttpStatus.CONFLICT :
+            ex.getCode() == 200503 ? HttpStatus.SERVICE_UNAVAILABLE : ex.getCode() == 200429 ? HttpStatus.TOO_MANY_REQUESTS : HttpStatus.BAD_REQUEST;
         return ResponseEntity.status(status).body(ApiResponse.error(ex.getCode(), ex.getMessage()));
+    }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleConflict(Exception ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(100409, "记录已存在或操作冲突"));
+    }
+
+    @ExceptionHandler(org.springframework.orm.ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ApiResponse<Void>> handleConcurrentUpdate(Exception ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(100409, "记录已更新，请刷新后重试"));
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class, ConstraintViolationException.class,

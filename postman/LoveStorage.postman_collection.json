@@ -2,10 +2,17 @@
   "info": {
     "name": "LoveStorage 本地接口联调",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "按 01–10 顺序执行或使用 Collection Runner。03 自动生成唯一 clientId 并记录 itemId；09 只软删除本次创建记录。需要查看数据库时，在 03 或 07 后暂停。完整运行的 400/404 是预期通过场景。默认连接 Docker 18080；IDEA 运行 Java 时选 18081 环境。当前接口无需认证。"
+    "description": "本地候选版：先注册或登录，自动保存 accessToken，其余请求继承 Bearer。首次注册自动生成测试用户名和密码，可在环境中自行设置。账号数据相互隔离。退出放在最后。"
   },
   "auth": {
-    "type": "noauth"
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
   },
   "variable": [
     {
@@ -15,6 +22,114 @@
     }
   ],
   "item": [
+    {
+      "name": "00A 首次注册并登录",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!pm.environment.get('username')) pm.environment.set('username', 'local_' + pm.variables.replaceIn('{{$guid}}').replace(/-/g,'').slice(0,16));",
+              "if (!pm.environment.get('password')) pm.environment.set('password', 'Local_' + pm.variables.replaceIn('{{$guid}}'));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "if (pm.response.code === 200) { const d=pm.response.json().data; pm.environment.set('accessToken',d.accessToken); pm.environment.set('userId',d.user.id); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "00B 已有账号登录",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "if (pm.response.code === 200) { const d=pm.response.json().data; pm.environment.set('accessToken',d.accessToken); pm.environment.set('userId',d.user.id); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "00C 当前账号",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/auth/me"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
     {
       "name": "01 健康检查",
       "event": [
@@ -358,6 +473,88 @@
         "header": [],
         "url": "{{baseUrl}}/api/v1/items/{{itemId}}"
       }
+    },
+    {
+      "name": "11 文本识别草稿（不保存库存）",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/recognition/text",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"品名：牛奶\\n生产日期：2026年10月3日\\n保质期：30天\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 查询完整备份",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/backup"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 退出当前会话",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/auth/logout"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.environment.unset('accessToken');"
+            ]
+          }
+        }
+      ]
     }
   ]
 }

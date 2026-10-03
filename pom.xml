@@ -13,7 +13,7 @@
 
   <groupId>com.smartexpiry</groupId>
   <artifactId>smart-expiry-server</artifactId>
-  <version>0.1.0-M1</version>
+  <version>0.4.0-local</version>
   <name>smart-expiry-server</name>
   <description>Smart Expiry Java backend M1 baseline</description>
 
@@ -22,6 +22,10 @@
   </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>

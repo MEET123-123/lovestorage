@@ -11,6 +11,9 @@ public class ItemEntity {
     @Id
     private String id;
 
+    @Column(name = "owner_id", length = 36)
+    private String ownerId;
+
     @Column(nullable = false, length = 120)
     private String name;
 
@@ -50,6 +53,8 @@ public class ItemEntity {
     }
 
     public String getId() { return id; }
+    public String getOwnerId() { return ownerId; }
+    public void assignOwner(String ownerId) { this.ownerId = ownerId; }
     public String getName() { return name; }
     public String getCategoryId() { return categoryId; }
     public String getBrand() { return brand; }

@@ -1,3 +1,5 @@
+> 当前本地候选版：0.3.0。新增用户名密码账号、用户隔离、完整快照备份/恢复和规则文本识别。启动与使用见 [本地候选版说明](docs/LOCAL_CANDIDATE.md)。除健康检查与注册登录外，API 需要 Bearer 令牌。
+
 # lovestorage-server
 
 Docker 运行后端 + PostgreSQL、查看数据和 IDE 断点调试步骤见 [Docker 调试指南](docs/DOCKER_DEBUG.md)。

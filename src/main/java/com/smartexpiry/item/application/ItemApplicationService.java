@@ -1,6 +1,7 @@
 package com.smartexpiry.item.application;
 
 import com.smartexpiry.category.CategoryRepository;
+import com.smartexpiry.auth.AuthService;
 import com.smartexpiry.common.exception.BusinessException;
 import com.smartexpiry.expiry.domain.ExpiryEvaluation;
 import com.smartexpiry.expiry.domain.ExpiryService;
@@ -69,6 +70,7 @@ public class ItemApplicationService {
         validateDates(request.productionDate(), expiryDate, request.openedDate(), request.afterOpenValue(), request.afterOpenUnit());
         ItemEntity item = new ItemEntity(itemId, request.name().trim(), request.categoryId(), request.brand(),
             ItemLifecycleStatus.ACTIVE, now, now);
+        item.assignOwner(AuthService.userId());
         itemRepository.save(item);
 
         InventoryBatchEntity batch = new InventoryBatchEntity(
@@ -83,7 +85,7 @@ public class ItemApplicationService {
 
     @Transactional(readOnly = true)
     public List<ItemResponse> list() {
-        return itemRepository.findByDeletedAtIsNullOrderByUpdatedAtDesc().stream()
+        return itemRepository.findByOwnerIdAndDeletedAtIsNullOrderByUpdatedAtDesc(AuthService.userId()).stream()
             .map(item -> toResponse(item, findBatch(item.getId())))
             .toList();
     }
@@ -133,7 +135,7 @@ public class ItemApplicationService {
 
     private ItemResponse toResponse(ItemEntity item, InventoryBatchEntity batch) {
         ExpiryEvaluation evaluation = expiryService.evaluate(batch.getExpiryDate(), batch.getOpenedDate(),
-            batch.getAfterOpenValue(), batch.getAfterOpenUnit(), DEFAULT_REMINDER_DAYS, LocalDate.now(clock));
+            batch.getAfterOpenValue(), batch.getAfterOpenUnit(), "cosmetics".equals(item.getCategoryId()) ? 30 : DEFAULT_REMINDER_DAYS, LocalDate.now(clock));
         return new ItemResponse(item.getId(), item.getName(), item.getCategoryId(), item.getBrand(),
             item.getLifecycleStatus(), batch.getQuantity(), batch.getUnit(), batch.getProductionDate(),
             batch.getExpiryDate(), evaluation.effectiveExpiryDate(), evaluation.remainingDays(), evaluation.status(),
@@ -141,7 +143,7 @@ public class ItemApplicationService {
     }
 
     private ItemEntity findItem(String id) {
-        return itemRepository.findByIdAndDeletedAtIsNull(id)
+        return itemRepository.findByIdAndOwnerIdAndDeletedAtIsNull(id, AuthService.userId())
             .orElseThrow(() -> new BusinessException(300001, "item not found"));
     }
 
@@ -164,6 +166,10 @@ public class ItemApplicationService {
 
     private void validateDates(LocalDate production, LocalDate expiry, LocalDate opened, Integer after,
                                com.smartexpiry.expiry.domain.ShelfLifeUnit unit) {
+        if (java.util.stream.Stream.of(production, expiry, opened).filter(java.util.Objects::nonNull).anyMatch(d -> d.getYear() < 1900 || d.getYear() > 9999))
+            throw new BusinessException(300004, "date year must be between 1900 and 9999");
+        if (after != null && opened == null) throw new BusinessException(300004, "openedDate is required for after-open duration");
+        if (opened != null && opened.isAfter(LocalDate.now(clock))) throw new BusinessException(300004, "openedDate must not be in the future");
         if (production != null && expiry != null && expiry.isBefore(production))
             throw new BusinessException(300004, "expiryDate must not precede productionDate");
         if ((after == null) != (unit == null))

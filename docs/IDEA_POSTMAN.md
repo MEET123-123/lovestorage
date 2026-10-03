@@ -1,3 +1,5 @@
+> 0.3.0：先注册/登录取得 Bearer 令牌，再执行分类和库存接口。使用更新后的 Postman 集合；新版独立联调库为 smart_expiry_candidate，端口 18081。详细步骤见 [本地候选版](LOCAL_CANDIDATE.md)。下列 smart_expiry 配置仍适用于原 Docker 开发库。
+
 # IDEA 与 Postman 本地联调
 
 ## 1. 启动容器
@@ -11,7 +13,7 @@ docker compose --profile server ps
 Invoke-RestMethod http://localhost:18080/api/v1/health
 ```
 
-PostgreSQL 和 backend 均需运行。health 是进程健康接口，查询分类或创建物品才能进一步验证数据库访问。
+PostgreSQL 和 backend 均需运行。新版 health 会查询数据库，连接失败返回 503。
 
 ## 2. IDEA 连接数据库
 
