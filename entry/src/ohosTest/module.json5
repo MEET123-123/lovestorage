@@ -8,6 +8,8 @@
     "abilities": [
       {
         "name": "TestAbility",
+        "startWindowIcon": "$media:startIcon",
+        "startWindowBackground": "$color:start_window_background",
         "srcEntry": "./ets/testability/TestAbility.ets",
         "exported": true
       }

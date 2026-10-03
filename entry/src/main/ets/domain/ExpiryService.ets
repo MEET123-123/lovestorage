@@ -53,7 +53,10 @@ export class ExpiryService {
   }
 
   private addDate(dateText: string, value: number, unit: ShelfLifeUnit): string {
-    const [year, month, day] = dateText.split('-').map((v: string) => Number(v));
+    const parts = dateText.split('-').map((v: string) => Number(v));
+    const year = parts[0];
+    const month = parts[1];
+    const day = parts[2];
     if (unit === ShelfLifeUnit.DAY) {
       const date = new Date(Date.UTC(year, month - 1, day));
       date.setUTCDate(date.getUTCDate() + value);
@@ -85,7 +88,10 @@ export class ExpiryService {
   }
 
   private parseUtc(value: string): Date {
-    const [year, month, day] = value.split('-').map((v: string) => Number(v));
+    const parts = value.split('-').map((v: string) => Number(v));
+    const year = parts[0];
+    const month = parts[1];
+    const day = parts[2];
     return new Date(Date.UTC(year, month - 1, day));
   }
 

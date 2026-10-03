@@ -1,5 +1,5 @@
 {
-  "modelVersion": "5.0.0",
+  "modelVersion": "26.0.0",
   "name": "smart-expiry",
   "version": "0.1.0",
   "description": "Smart Expiry HarmonyOS M1 baseline",

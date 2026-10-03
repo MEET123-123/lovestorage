@@ -7,4 +7,6 @@ export interface Item {
   createdAt: number;
   updatedAt: number;
   deletedAt?: number;
+  pending?: number;
+  remoteId?: string;
 }
