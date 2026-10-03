@@ -3,6 +3,7 @@
 .vscode/
 *.iml
 target/
+data/
 .mvn/wrapper/dists/
 *.log
 .env

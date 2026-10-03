@@ -69,4 +69,9 @@ public class ItemEntity {
         this.deletedAt = now;
         this.updatedAt = now;
     }
+
+    public void changeLifecycle(ItemLifecycleStatus status, Instant now) {
+        this.lifecycleStatus = status;
+        this.updatedAt = now;
+    }
 }

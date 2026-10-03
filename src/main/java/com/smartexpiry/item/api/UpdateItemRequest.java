@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record UpdateItemRequest(
+    com.smartexpiry.item.domain.ItemLifecycleStatus lifecycleStatus,
     @Size(min = 1, max = 120) String name,
     String categoryId,
     @Size(min = 1, max = 120) String brand,

@@ -1,27 +1,23 @@
-# M1 Validation Report
+# 验证记录 — 2026-10-03
 
-Validation performed in the generation environment:
+Windows / JDK 21.0.12.1 / Spring Boot 4.1.1。
 
-- `shared/expiry-test-cases.json`: JSON parse passed.
-- `openapi/smart-expiry-v1.yaml`: YAML/OpenAPI structural parse passed.
-- HarmonyOS `.json5` project files: strict JSON parse passed.
-- Maven `pom.xml`: XML parse passed.
-- Java `ExpiryService` and related domain classes: compiled with JDK 21 and executed against all shared expiry fixtures.
-- ArkTS `ExpiryService.ets`: TypeScript-compatible domain code compiled with `tsc 5.8.3` and executed with Node 22 against the same fixtures.
-- Shared contract result: **9/9 cases passed on both implementations**, including month-end and leap-year clamp behavior.
-- Generated ArkTS fixture synchronization check passed.
-- Basic OpenAPI/controller route consistency check passed.
-- Secret-pattern scan passed.
+`mvnw.cmd verify`：BUILD SUCCESS，4 个 JUnit 测试方法，0 失败、0 错误。
+- 1 个共享规则测试覆盖 9 条日期 fixture。
+- 3 个真实随机端口 HTTP 集成测试覆盖健康、分类、CRUD、PATCH、PUT 兼容更新、日期重算、生命周期、创建重试、软删除、无效日期/请求、失败事务回滚。
+- 测试实际执行 Flyway V1 迁移，Hibernate validate 校验 H2 PostgreSQL 模式数据库；不再通过 create-drop 绕过迁移。
 
-## Environment limitation
+可执行 JAR 已生成并在 local profile 的 8080 端口实际运行。
+创建持久化记录、停止服务、重新启动后查询仍成功；测试记录已软删除。
+前端 ApiClient 源码经主机传输适配器完成实际 HTTP 联调，含创建重试和删除重试。
 
-The generation sandbox does not have Docker or Maven preinstalled and outbound DNS from the container is blocked. Therefore the complete Spring dependency graph could not be downloaded and `mvn test` could not be executed inside this sandbox.
+修复：损坏的 ItemApplicationService、Spring Boot 4 测试依赖/导入、Jackson 3 测试兼容、服务构造器注入、Flyway 自动配置、expiryStatus 契约字段、非法请求返回 500、日期校验。
+新增：客户端幂等创建 ID、生命周期修改、API 20 的 PUT 兼容入口、本地持久数据库配置及 Windows 构建/运行脚本。
 
-The repo includes a Maven bootstrap script (`backend/mvnw`) and CI workflow. In a normal development/CI environment with internet access, run:
+追加 Docker 验证（2026-10-03）：Java 21 后端镜像构建成功，后端与 PostgreSQL 17.11 容器运行正常。
+PostgreSQL 健康检查、Flyway V1 迁移、Hibernate schema validate 及实际 ApiClient HTTP CRUD/重试联调均通过。
+容器内查询确认系统分类和测试记录已入库，测试记录已软删除；使用命名卷 `lovestorage_smart_expiry_pgdata`。
+详见 `DOCKER_DEBUG.md`。
 
-```bash
-cd backend
-./mvnw test
-```
-
-The HarmonyOS project also requires DevEco Studio/HarmonyOS SDK, which is not available in this sandbox. Import `harmonyos/` into DevEco Studio and run the `entry` module plus `ohosTest` target.
+未验证：真机 UI/ArkData、签名安装、多设备并发同步、提醒/OCR/语音/AI、生产部署验收。
+当前服务没有认证隔离，不应公开部署。

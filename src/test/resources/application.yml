@@ -3,14 +3,13 @@ spring:
     url: jdbc:h2:mem:smart_expiry;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
     driver-class-name: org.h2.Driver
     username: sa
-    password:
+    password: ''
   flyway:
-    enabled: false
+    enabled: true
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
     open-in-view: false
-    defer-datasource-initialization: true
   sql:
     init:
-      mode: always
+      mode: never

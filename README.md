@@ -1,5 +1,21 @@
 # lovestorage-server
 
+Docker 运行后端 + PostgreSQL、查看数据和 IDE 断点调试步骤见 [Docker 调试指南](docs/DOCKER_DEBUG.md)。
+
+IDEA 数据库连接、Java 断点和 Postman 集合导入步骤见 [IDEA / Postman 联调指南](docs/IDEA_POSTMAN.md)。可导入的测试集合和环境文件位于 `postman/`。
+
+## Windows 本地运行（2026-10-03 已验证）
+
+```powershell
+.\scripts\build.ps1
+.\scripts\run.ps1
+```
+
+默认使用 `local` profile，H2 文件数据库保存到 `data/`，无需 Docker，重启保留数据。
+`scripts/run.ps1 -Profile default` 使用下文的 PostgreSQL 配置。
+前端工程为同级 `../append/harmonyos`。当前已支持客户端幂等创建 ID、生命周期状态更新、API 20 的 PUT 更新兼容入口。
+详细验证记录和已知限制见 `docs/VALIDATION.md`，工作区完整操作步骤见 `../README.md`。
+
 Java 后端独立仓库。M1 基线采用 Java 21 + Spring Boot 4.1.1 + PostgreSQL + Flyway。
 
 ## 仓库职责

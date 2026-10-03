@@ -1,0 +1,12 @@
+# Local development only. Persistent database; no Docker required.
+spring:
+  datasource:
+    url: jdbc:h2:file:./data/smart_expiry;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ''
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true

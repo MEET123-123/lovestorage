@@ -19,7 +19,7 @@ public record ItemResponse(
     LocalDate expiryDate,
     LocalDate effectiveExpiryDate,
     Integer remainingDays,
-    ExpiryStatus status,
+    ExpiryStatus expiryStatus,
     Instant createdAt,
     Instant updatedAt
 ) {}

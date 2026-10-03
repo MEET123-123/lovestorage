@@ -106,6 +106,21 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ApiResponseItem' }
+    put:
+      operationId: updateItemCompatible
+      description: Partial update alias for HarmonyOS API 20 HTTP clients without PATCH support. Omitted or null fields stay unchanged.
+      tags: [Item]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateItemRequest' }
+      responses:
+        '200':
+          description: Updated item
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponseItem' }
     delete:
       operationId: deleteItem
       tags: [Item]
@@ -160,6 +175,7 @@ components:
       type: object
       required: [name, categoryId]
       properties:
+        clientId: { type: string, format: uuid, description: Optional stable client UUID; retry returns the existing item. Deleted IDs cannot be reused. }
         name: { type: string, minLength: 1, maxLength: 120 }
         categoryId: { type: string }
         brand: { type: string, maxLength: 120 }
@@ -175,6 +191,7 @@ components:
     UpdateItemRequest:
       type: object
       properties:
+        lifecycleStatus: { type: string, enum: [ACTIVE, CONSUMED, DISCARDED, ARCHIVED] }
         name: { type: string, minLength: 1, maxLength: 120 }
         categoryId: { type: string }
         brand: { type: string, maxLength: 120 }

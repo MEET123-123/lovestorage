@@ -42,4 +42,10 @@ public class ItemController {
         service.delete(itemId);
         return ApiResponse.success(true);
     }
+
+    @PutMapping("/{itemId}")
+    public ApiResponse<ItemResponse> updateCompatible(@PathVariable String itemId,
+                                                      @Valid @RequestBody UpdateItemRequest request) {
+        return ApiResponse.success(service.update(itemId, request));
+    }
 }

@@ -1,0 +1,4 @@
+**
+!Dockerfile
+!target/
+!target/smart-expiry-server-0.1.0-M1.jar

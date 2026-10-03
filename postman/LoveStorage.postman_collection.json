@@ -1,0 +1,363 @@
+{
+  "info": {
+    "name": "LoveStorage 本地接口联调",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "按 01–10 顺序执行或使用 Collection Runner。03 自动生成唯一 clientId 并记录 itemId；09 只软删除本次创建记录。需要查看数据库时，在 03 或 07 后暂停。完整运行的 400/404 是预期通过场景。默认连接 Docker 18080；IDEA 运行 Java 时选 18081 环境。当前接口无需认证。"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:18080",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 健康检查",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const result = pm.response.json();",
+              "pm.test('统一响应结构', () => { pm.expect(result).to.have.property('code'); pm.expect(result).to.have.property('message'); });",
+              "pm.test('业务成功', () => pm.expect(result.code).to.eql(0));",
+              "pm.test('服务 UP', () => pm.expect(result.data.status).to.eql('UP'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/health"
+      }
+    },
+    {
+      "name": "02 查询分类（也会访问数据库）",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const result = pm.response.json();",
+              "pm.test('统一响应结构', () => { pm.expect(result).to.have.property('code'); pm.expect(result).to.have.property('message'); });",
+              "pm.test('业务成功', () => pm.expect(result.code).to.eql(0));",
+              "pm.test('系统分类', () => pm.expect(result.data.map(x => x.id)).to.include('food'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/categories"
+      }
+    },
+    {
+      "name": "03 创建测试物品并保存 itemId",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.unset('itemId');",
+              "pm.collectionVariables.set('clientId', pm.variables.replaceIn('{{$guid}}'));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const result = pm.response.json();",
+              "pm.test('统一响应结构', () => { pm.expect(result).to.have.property('code'); pm.expect(result).to.have.property('message'); });",
+              "pm.test('业务成功', () => pm.expect(result.code).to.eql(0));",
+              "pm.test('到期推导', () => pm.expect(result.data.expiryDate).to.eql('2026-11-03'));",
+              "pm.test('返回客户端 ID', () => pm.expect(result.data.id).to.eql(pm.collectionVariables.get('clientId')));",
+              "pm.collectionVariables.set('itemId', result.data.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/items",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clientId\": \"{{clientId}}\",\n  \"name\": \"Postman 联调牛奶\",\n  \"categoryId\": \"food\",\n  \"quantity\": 2,\n  \"unit\": \"盒\",\n  \"productionDate\": \"2026-10-03\",\n  \"shelfLifeValue\": 1,\n  \"shelfLifeUnit\": \"MONTH\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "04 查询列表",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const result = pm.response.json();",
+              "pm.test('统一响应结构', () => { pm.expect(result).to.have.property('code'); pm.expect(result).to.have.property('message'); });",
+              "pm.test('业务成功', () => pm.expect(result.code).to.eql(0));",
+              "pm.test('包含刚创建物品', () => pm.expect(result.data.map(x => x.id)).to.include(pm.collectionVariables.get('itemId')));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/items"
+      }
+    },
+    {
+      "name": "05 查询详情",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!pm.collectionVariables.get('itemId')) { throw new Error('请先执行 03 创建测试物品'); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const result = pm.response.json();",
+              "pm.test('统一响应结构', () => { pm.expect(result).to.have.property('code'); pm.expect(result).to.have.property('message'); });",
+              "pm.test('业务成功', () => pm.expect(result.code).to.eql(0));",
+              "pm.test('ID 正确', () => pm.expect(result.data.id).to.eql(pm.collectionVariables.get('itemId')));",
+              "pm.test('到期状态字段', () => pm.expect(result.data).to.have.property('expiryStatus'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/items/{{itemId}}"
+      }
+    },
+    {
+      "name": "06 修改名称和保质期",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!pm.collectionVariables.get('itemId')) { throw new Error('请先执行 03 创建测试物品'); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const result = pm.response.json();",
+              "pm.test('统一响应结构', () => { pm.expect(result).to.have.property('code'); pm.expect(result).to.have.property('message'); });",
+              "pm.test('业务成功', () => pm.expect(result.code).to.eql(0));",
+              "pm.test('日期重算', () => pm.expect(result.data.expiryDate).to.eql('2026-12-03'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/items/{{itemId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Postman 修改后的牛奶\",\n  \"shelfLifeValue\": 2\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "07 标记已用完（PUT 兼容接口）",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!pm.collectionVariables.get('itemId')) { throw new Error('请先执行 03 创建测试物品'); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const result = pm.response.json();",
+              "pm.test('统一响应结构', () => { pm.expect(result).to.have.property('code'); pm.expect(result).to.have.property('message'); });",
+              "pm.test('业务成功', () => pm.expect(result.code).to.eql(0));",
+              "pm.test('已用完', () => pm.expect(result.data.lifecycleStatus).to.eql('CONSUMED'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/items/{{itemId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"lifecycleStatus\": \"CONSUMED\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "08 校验错误示例（预期 400）",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+              "const result = pm.response.json();",
+              "pm.test('统一响应结构', () => { pm.expect(result).to.have.property('code'); pm.expect(result).to.have.property('message'); });",
+              "pm.test('业务错误码', () => pm.expect(result.code).to.not.eql(0));",
+              ""
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/items",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"缺少到期信息\",\n  \"categoryId\": \"food\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "09 软删除本次测试物品",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!pm.collectionVariables.get('itemId')) { throw new Error('请先执行 03 创建测试物品'); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const result = pm.response.json();",
+              "pm.test('统一响应结构', () => { pm.expect(result).to.have.property('code'); pm.expect(result).to.have.property('message'); });",
+              "pm.test('业务成功', () => pm.expect(result.code).to.eql(0));",
+              "pm.test('删除成功', () => pm.expect(result.data).to.eql(true));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/items/{{itemId}}"
+      }
+    },
+    {
+      "name": "10 删除后查询（预期 404）",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!pm.collectionVariables.get('itemId')) { throw new Error('请先执行 03 创建测试物品'); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+              "const result = pm.response.json();",
+              "pm.test('统一响应结构', () => { pm.expect(result).to.have.property('code'); pm.expect(result).to.have.property('message'); });",
+              "pm.test('业务错误码', () => pm.expect(result.code).to.not.eql(0));",
+              ""
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/items/{{itemId}}"
+      }
+    }
+  ]
+}

@@ -32,11 +32,13 @@ public class ItemApplicationService {
     private final ExpiryService expiryService;
     private final Clock clock;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public ItemApplicationService(ItemJpaRepository itemRepository,
                                   InventoryBatchJpaRepository batchRepository,
                                   CategoryRepository categoryRepository,
                                   ExpiryService expiryService) {
-        this(itemRepository, batchRepository, categoryRepository, expiryService, Clock.systemUTC());
+        this(itemRepository, batchRepository, categoryRepository, expiryService,
+            Clock.system(java.time.ZoneId.of("Asia/Shanghai")));
     }
 
     ItemApplicationService(ItemJpaRepository itemRepository,
@@ -53,15 +55,19 @@ public class ItemApplicationService {
 
     @Transactional
     public ItemResponse create(CreateItemRequest request) {
+        if (request.clientId() != null && itemRepository.existsById(request.clientId())) {
+            return get(request.clientId());
+        }
         requireCategory(request.categoryId());
         validateShelfLife(request.productionDate(), request.expiryDate(), request.shelfLifeValue(), request.shelfLifeUnit());
         Instant now = Instant.now(clock);
-        String itemId = UUID.randomUUID().toString();
+        String itemId = request.clientId() == null ? UUID.randomUUID().toString() : request.clientId();
         LocalDate expiryDate = request.expiryDate() != null
             ? request.expiryDate()
             : expiryService.deriveExpiryDate(request.productionDate(), request.shelfLifeValue(), request.shelfLifeUnit());
 
-        ItemEntity item = new ItemEntity(itemId, request.name(), request.categoryId(), request.brand(),
+        validateDates(request.productionDate(), expiryDate, request.openedDate(), request.afterOpenValue(), request.afterOpenUnit());
+        ItemEntity item = new ItemEntity(itemId, request.name().trim(), request.categoryId(), request.brand(),
             ItemLifecycleStatus.ACTIVE, now, now);
         itemRepository.save(item);
 
@@ -94,4 +100,75 @@ public class ItemApplicationService {
         InventoryBatchEntity batch = findBatch(id);
         Instant now = Instant.now(clock);
 
-        if (request.categoryId() != null¤ì(€€€€€€€€€€€É•ÅÕ¥É•…Ñ•½Éä¡É•ÅÕ•ÍÐ¹…Ñ•½Éå% ¤¤ì(€€€€€€€ô(€€€€€€€¥Ñ•´¹ÕÁ‘…Ñ” (€€€€€€€€€€€É•ÅÕ•ÍÐ¹¹…µ” ¤€ôô¹Õ±°€ü¥Ñ•´¹•Ñ9…µ” ¤€èÉ•ÅÕ•ÍÐ¹¹…µ” ¤°(€€€€€€€€€€€É•ÅÕ•ÍÐ¹…Ñ•½Éå% ¤€ôô¹Õ±°€ü¥Ñ•´¹•Ñ…Ñ•½Éå% ¤€èÉ•ÅÕ•ÍÐ¹…Ñ•½Éå% ¤°(€€€€€€€€€€€É•ÅÕ•ÍÐ¹‰É…¹ ¤€ôô¹Õ±°€ü¥Ñ•´¹•Ñ	É…¹ ¤€èÉ•ÅÕ•ÍÐ¹‰É…¹ ¤°(€€€€€€€€€€€¹½Ü(€€€€€€€€¤ì((€€€€€€€	¥•¥µ…°ÅÕ…¹Ñ¥Ñä€ôÉ•ÅÕ•ÍÐ¹ÅÕ…¹Ñ¥Ñä ¤€ôô¹Õ±°€ü‰…Ñ ¹•ÑEÕ…¹Ñ¥Ñä ¤€èÉ•ÅÕ•ÍÐ¹ÅÕ…¹Ñ¥Ñä ¤ì(€€€€€€€MÑÉ¥¹œÕ¹¥Ð€ôÉ•ÅÕ•ÍÐ¹Õ¹¥Ð ¤€ôô¹Õ±°€ü‰…Ñ ¹•ÑU¹¥Ð ¤€èÉ•ÅÕ•ÍÐ¹Õ¹¥Ð ¤ì(€€€€€€€1½…±…Ñ”ÁÉ½‘ÕÑ¥½¹…Ñ”€ôÉ•ÅÕ•ÍÐ¹ÁÉ½‘ÕÑ¥½¹…Ñ” ¤€ôô¹Õ±°€ü‰…Ñ ¹•ÑAÉ½‘ÕÑ¥½¹…Ñ” ¤€èÉ•ÅÕ•ÍÐ¹ÁÉ½‘ÕÑ¥½¹…Ñ” ¤ì(€€€€€€€%¹Ñ••ÈÍ¡•±™1¥™•Y…±Õ”€ôÉ•ÅÕ•ÍÐ¹Í¡•±™1¥™•Y…±Õ” ¤€ôô¹Õ±°€ü‰…Ñ ¹•ÑM¡•±™1¥™•Y…±Õ” ¤€èÉ•ÅÕ•ÍÐ¹Í¡•±™1¥™•Y…±Õ” ¤ì(€€€€€€€Ù…ÈÍ¡•±™1¥™•U¹¥Ð€ôÉ•ÅÕ•ÍÐ¹Í¡•±™1¥™•U¹¥Ð ¤€ôô¹Õ±°€ü‰…Ñ ¹•ÑM¡•±™1¥™•U¹¥Ð ¤€èÉ•ÅÕ•ÍÐ¹Í¡•±™1¥™•U¹¥Ð ¤ì(€€€€€€€1½…±…Ñ”•áÁ¥Éå…Ñ”€ôÉ•ÅÕ•ÍÐ¹•áÁ¥Éå…Ñ” ¤ì(€€€€€€€¥˜€¡•áÁ¥Éå…Ñ”€ôô¹Õ±°¤ì(€€€€€€€€€€€•áÁ¥Éå…Ñ”€ô‰…Ñ ¹•ÑáÁ¥Éå…Ñ” ¤ì(€€€€€€€€€€€¥˜€¡É•ÅÕ•ÍÐ¹ÁÉ½‘ÕÑ¥½¹…Ñ” ¤€„ô¹Õ±°ñðÉ•ÅÕ•ÍÐ¹Í¡•±™1¥™•Y…±Õ” ¤€„ô¹Õ±°ñðÉ•ÅÕ•ÍÐ¹Í¡•±™1¥™•U¹¥Ð ¤€„ô¹Õ±°¤ì(€€€€€€€€€€€€€€€1½…±…Ñ”‘•É¥Ù•€ô•áÁ¥ÉåM•ÉÙ¥”¹‘•É¥Ù•áÁ¥Éå…Ñ”¡ÁÉ½‘ÕÑ¥½¹…Ñ”°Í¡•±™1¥™•Y…±Õ”°Í¡•±™1¥™•U¹¥Ð¤ì(€€€€€€€€€€€€€€€¥˜€¡‘•É¥Ù•€„ô¹Õ±°¤•áÁ¥Éå…Ñ”€ô‘•É¥Ù•ì(€€€€€€€€€€€ô(€€€€€€€ô(€€€€€€€1½…±…Ñ”½Á•¹•‘…Ñ”€ôÉ•ÅÕ•ÍÐ¹½Á•¹•‘…Ñ” ¤€ôô¹Õ±°€ü‰…Ñ ¹•Ñ=Á•¹•‘…Ñ” ¤€èÉ•ÅÕ•ÍÐ¹½Á•¹•‘…Ñ” ¤ì(€€€€€€€%¹Ñ••È…™Ñ•É=Á•¹Y…±Õ”€ôÉ•ÅÕ•ÍÐ¹…™Ñ•É=Á•¹Y…±Õ” ¤€ôô¹Õ±°€ü‰…Ñ ¹•Ñ™Ñ•É=Á•¹Y…±Õ” ¤€èÉ•ÅÕ•ÍÐ¹…™Ñ•É=Á•¹Y…±Õ” ¤ì(€€€€€€€Ù…È…™Ñ•É=Á•¹U¹¥Ð€ôÉ•ÅÕ•ÍÐ¹…™Ñ•É=Á•¹U¹¥Ð ¤€ôô¹Õ±°€ü‰…Ñ ¹•Ñ™Ñ•É=Á•¹U¹¥Ð ¤€èÉ•ÅÕ•ÍÐ¹…™Ñ•É=Á•¹U¹¥Ð ¤ì((€€€€€€€‰…Ñ ¹ÕÁ‘…Ñ”¡ÅÕ…¹Ñ¥Ñä°Õ¹¥Ð°ÁÉ½‘ÕÑ¥½¹…Ñ”°•áÁ¥Éå…Ñ”°Í¡•±™1¥™•Y…±Õ”°Í¡•±™1¥™•U¹¥Ð°(€€€€€€€€€€€½Á•¹•‘…Ñ”°…™Ñ•É=Á•¹Y…±Õ”°…™Ñ•É=Á•¹U¹¥Ð°¹½Ü¤ì(€€€€€€€É•ÑÕÉ¸Ñ½I•ÍÁ½¹Í”¡¥Ñ•´°‰…Ñ ¤ì(€€€ô((€€€QÉ…¹Í…Ñ¥½¹…°(€€€ÁÕ‰±¥ŒÙ½¥‘•±•Ñ”¡MÑÉ¥¹œ¥¤ì(€€€€€€€%Ñ•µ¹Ñ¥Ñä¥Ñ•´€ô™¥¹‘%Ñ•´¡¥¤ì(€€€€€€€¥Ñ•´¹Í½™Ñ•±•Ñ”¡%¹ÍÑ…¹Ð¹¹½Ü¡±½¬¤¤ì(€€€ô((€€€ÁÉ¥Ù…Ñ”%Ñ•µI•ÍÁ½¹Í”Ñ½I•ÍÁ½¹Í”¡%Ñ•µ¹Ñ¥Ñä¥Ñ•´°%¹Ù•¹Ñ½Éå	…Ñ¡¹Ñ¥Ñä‰…Ñ ¤ì(€€€€€€€áÁ¥ÉåÙ…±Õ…Ñ¥½¸•Ù…±Õ…Ñ¥½¸€ô•áÁ¥ÉåM•ÉÙ¥”¹•Ù…±Õ…Ñ” (€€€€€€€€€€€‰…Ñ ¹•ÑáÁ¥Éå…Ñ” ¤°‰…Ñ ¹•Ñ=Á•¹•‘…Ñ” ¤°‰…Ñ ¹•Ñ™Ñ•É=Á•¹Y…±Õ” ¤°‰…Ñ ¹•Ñ™Ñ•É=Á•¹U¹¥Ð ¤°(€€€€€€€€€€€U1Q}I5%9I}eL°1½…±…Ñ”¹¹½Ü¡±½¬¤(€€€€€€€€¤ì(€€€€€€€É•ÑÕÉ¸¹•Ü%Ñ•µI•ÍÁ½¹Í” (€€€€€€€€€€€¥Ñ•´¹•Ñ% ¤°¥Ñ•´¹•Ñ9…µ” ¤°¥Ñ•´¹•Ñ…Ñ•½Éå% ¤°¥Ñ•´¹•Ñ	É…¹ ¤°¥Ñ•´¹•Ñ1¥™•å±•MÑ…ÑÕÌ ¤°(€€€€€€€€€€€‰…Ñ ¹•ÑEÕ…¹Ñ¥Ñä ¤°‰…Ñ ¹•ÑU¹¥Ð ¤°‰…Ñ ¹•ÑAÉ½‘ÕÑ¥½¹…Ñ” ¤°‰…Ñ ¹•ÑáÁ¥Éå…Ñ” ¤°(€€€€€€€€€€€•Ù…±Õ…Ñ¥½¸¹•™™•Ñ¥Ù•áÁ¥Éå…Ñ” ¤°•Ù…±Õ…Ñ¥½¸¹É•µ…¥¹¥¹…åÌ ¤°•Ù…±Õ…Ñ¥½¸¹ÍÑ…ÑÕÌ ¤°(€€€€€€€€€€€¥Ñ•´¹•ÑÉ•…Ñ•‘Ð ¤°¥Ñ•´¹•ÑUÁ‘…Ñ•‘Ð ¤(€€€€€€€€¤ì(€€€ô((€€€ÁÉ¥Ù…Ñ”%Ñ•µ¹Ñ¥Ñä™¥¹‘%Ñ•´¡MÑÉ¥¹œ¥¤ì(€€€€€€€É•ÑÕÉ¸¥Ñ•µI•Á½Í¥Ñ½Éä¹™¥¹‘	å%‘¹‘•±•Ñ•‘Ñ9Õ±°¡¥¤(€€€€€€€€€€€€¹½É±Í•Q¡É½Ü  ¤€´ø¹•Ü	ÕÍ¥¹•ÍÍá•ÁÑ¥½¸ ÌÀÀÀÀÄ°€‰¥Ñ•´¹½Ð™½Õ¹ˆ¤¤ì(€€€ô((€€€ÁÉ¥Ù…Ñ”%¹Ù•¹Ñ½Éå	…Ñ¡¹Ñ¥Ñä™¥¹‘	…Ñ ¡MÑÉ¥¹œ¥Ñ•µ%¤ì(€€€€€€€É•ÑÕÉ¸‰…Ñ¡I•Á½Í¥Ñ½Éä¹™¥¹‘¥ÉÍÑ	å%Ñ•µ%‘=É‘•É	åÉ•…Ñ•‘ÑÍŒ¡¥Ñ•µ%¤(€€€€€€€€€€€€¹½É±Í•Q¡É½Ü  ¤€´ø¹•Ü	ÕÍ¥¹•ÍÍá•ÁÑ¥½¸ ÌÀÀÀÀÈ°€‰¥¹Ù•¹Ñ½Éä‰…Ñ ¹½Ð™½Õ¹ˆ¤¤ì(€€€ô((€€€ÁÉ¥Ù…Ñ”Ù½¥É•ÅÕ¥É•…Ñ•½Éä¡MÑÉ¥¹œ…Ñ•½Éå%¤ì(€€€€€€€¥˜€ ……Ñ•½ÉåI•Á½Í¥Ñ½Éä¹•á¥ÍÑÍ	å%¡…Ñ•½Éå%¤¤ì(€€€€€€€€€€€Ñ¡É½Ü¹•Ü	ÕÍ¥¹•ÍÍá•ÁÑ¥½¸ ÌÀÀÀÀÌ°€‰…Ñ•½Éä¹½Ð™½Õ¹ˆ¤ì(€€€€€€€ô(€€€ô((€€€ÁÉ¥Ù…Ñ”Ù½¥Ù…±¥‘…Ñ•M¡•±™1¥™”¡1½…±…Ñ”ÁÉ½‘ÕÑ¥½¹…Ñ”°1½…±…Ñ”•áÁ¥Éå…Ñ”°%¹Ñ••ÈÙ…±Õ”°(€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€½´¹Íµ…ÉÑ•áÁ¥Éä¹•áÁ¥Éä¹‘½µ…¥¸¹M¡•±™1¥™•U¹¥ÐÕ¹¥Ð¤ì(€€€€€€€¥˜€¡•áÁ¥Éå…Ñ”€ôô¹Õ±°€˜˜€„¡ÁÉ½‘ÕÑ¥½¹…Ñ”€„ô¹Õ±°€˜˜Ù…±Õ”€„ô¹Õ±°€˜˜Õ¹¥Ð€„ô¹Õ±°¤¤ì(€€€€€€€€€€€Ñ¡É½Ü¹•Ü	ÕÍ¥¹•ÍÍá•ÁÑ¥½¸ ÌÀÀÀÀÐ°(€€€€€€€€€€€€€€€€‰•áÁ¥Éå…Ñ”½ÈÁÉ½‘ÕÑ¥½¹…Ñ”­Í¡•±™1¥™•Y…±Õ”­Í¡•±™1¥™•U¹¥Ð¥ÌÉ•ÅÕ¥É•ˆ¤ì(€€€€€€€ô(€€€ô)ô(
+        if (request.categoryId() != null) requireCategory(request.categoryId());
+        if (request.lifecycleStatus() != null) item.changeLifecycle(request.lifecycleStatus(), now);
+        if (request.name() != null && request.name().isBlank())
+            throw new BusinessException(100001, "name must not be blank");
+        item.update(request.name() == null ? item.getName() : request.name().trim(),
+            request.categoryId() == null ? item.getCategoryId() : request.categoryId(),
+            request.brand() == null ? item.getBrand() : request.brand(), now);
+        BigDecimal quantity = request.quantity() == null ? batch.getQuantity() : request.quantity();
+        String unit = request.unit() == null ? batch.getUnit() : request.unit();
+        LocalDate production = request.productionDate() == null ? batch.getProductionDate() : request.productionDate();
+        Integer life = request.shelfLifeValue() == null ? batch.getShelfLifeValue() : request.shelfLifeValue();
+        var lifeUnit = request.shelfLifeUnit() == null ? batch.getShelfLifeUnit() : request.shelfLifeUnit();
+        LocalDate expiry = request.expiryDate() == null ? batch.getExpiryDate() : request.expiryDate();
+        if (request.expiryDate() == null && (request.productionDate() != null || request.shelfLifeValue() != null || request.shelfLifeUnit() != null)) {
+            LocalDate derived = expiryService.deriveExpiryDate(production, life, lifeUnit);
+            if (derived != null) expiry = derived;
+        }
+        LocalDate opened = request.openedDate() == null ? batch.getOpenedDate() : request.openedDate();
+        Integer after = request.afterOpenValue() == null ? batch.getAfterOpenValue() : request.afterOpenValue();
+        var afterUnit = request.afterOpenUnit() == null ? batch.getAfterOpenUnit() : request.afterOpenUnit();
+        validateShelfLife(production, expiry, life, lifeUnit);
+        validateDates(production, expiry, opened, after, afterUnit);
+        batch.update(quantity, unit, production, expiry, life, lifeUnit, opened, after, afterUnit, now);
+        return toResponse(item, batch);
+    }
+
+    @Transactional
+    public void delete(String id) {
+        findItem(id).softDelete(Instant.now(clock));
+    }
+
+    private ItemResponse toResponse(ItemEntity item, InventoryBatchEntity batch) {
+        ExpiryEvaluation evaluation = expiryService.evaluate(batch.getExpiryDate(), batch.getOpenedDate(),
+            batch.getAfterOpenValue(), batch.getAfterOpenUnit(), DEFAULT_REMINDER_DAYS, LocalDate.now(clock));
+        return new ItemResponse(item.getId(), item.getName(), item.getCategoryId(), item.getBrand(),
+            item.getLifecycleStatus(), batch.getQuantity(), batch.getUnit(), batch.getProductionDate(),
+            batch.getExpiryDate(), evaluation.effectiveExpiryDate(), evaluation.remainingDays(), evaluation.status(),
+            item.getCreatedAt(), item.getUpdatedAt());
+    }
+
+    private ItemEntity findItem(String id) {
+        return itemRepository.findByIdAndDeletedAtIsNull(id)
+            .orElseThrow(() -> new BusinessException(300001, "item not found"));
+    }
+
+    private InventoryBatchEntity findBatch(String id) {
+        return batchRepository.findFirstByItemIdOrderByCreatedAtAsc(id)
+            .orElseThrow(() -> new BusinessException(300002, "inventory batch not found"));
+    }
+
+    private void requireCategory(String id) {
+        if (!categoryRepository.existsById(id)) throw new BusinessException(300003, "category not found");
+    }
+
+    private void validateShelfLife(LocalDate production, LocalDate expiry, Integer value,
+                                   com.smartexpiry.expiry.domain.ShelfLifeUnit unit) {
+        if (expiry == null && (production == null || value == null || unit == null))
+            throw new BusinessException(300004, "expiryDate or productionDate+shelfLifeValue+shelfLifeUnit is required");
+        if ((value == null) != (unit == null))
+            throw new BusinessException(300004, "shelf life value and unit must be provided together");
+    }
+
+    private void validateDates(LocalDate production, LocalDate expiry, LocalDate opened, Integer after,
+                               com.smartexpiry.expiry.domain.ShelfLifeUnit unit) {
+        if (production != null && expiry != null && expiry.isBefore(production))
+            throw new BusinessException(300004, "expiryDate must not precede productionDate");
+        if ((after == null) != (unit == null))
+            throw new BusinessException(300004, "after-open value and unit must be provided together");
+        if (opened != null && production != null && opened.isBefore(production))
+            throw new BusinessException(300004, "openedDate must not precede productionDate");
+    }
+}

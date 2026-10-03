@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record CreateItemRequest(
+    @jakarta.validation.constraints.Pattern(regexp = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}") String clientId,
     @NotBlank @Size(max = 120) String name,
     @NotBlank String categoryId,
     @Size(max = 120) String brand,

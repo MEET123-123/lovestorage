@@ -17,7 +17,9 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(ApiResponse.error(ex.getCode(), ex.getMessage()));
     }
 
-    @ExceptionHandler({MethodArgumentNotValidException.class, ConstraintViolationException.class})
+    @ExceptionHandler({MethodArgumentNotValidException.class, ConstraintViolationException.class,
+        org.springframework.http.converter.HttpMessageNotReadableException.class,
+        java.time.DateTimeException.class})
     public ResponseEntity<ApiResponse<Void>> handleValidation(Exception ex) {
         return ResponseEntity.badRequest().body(ApiResponse.error(100001, "validation failed"));
     }

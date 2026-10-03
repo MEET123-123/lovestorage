@@ -1,7 +1,7 @@
 package com.smartexpiry.expiry;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import com.smartexpiry.expiry.domain.ExpiryService;
 import com.smartexpiry.expiry.domain.ShelfLifeUnit;
 import org.junit.jupiter.api.Test;
