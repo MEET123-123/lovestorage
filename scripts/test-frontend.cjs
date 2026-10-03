@@ -21,6 +21,7 @@ class Predicates {
   equalTo(key,value){this.keys.push(key+' = ?');this.args.push(value);return this;}
 }
 class Store {
+  close() {} // The adapter retains memory files so account switching can reopen them.
   constructor(){this.db=new DatabaseSync(':memory:');this.failBatch=false;}
   get version(){return this.db.prepare('PRAGMA user_version').get().user_version;}
   set version(value){this.db.exec('PRAGMA user_version='+value);}
@@ -32,9 +33,9 @@ class Store {
   async insert(table,values){const keys=Object.keys(values);return this.db.prepare(`INSERT INTO ${table} (${keys.join(',')}) VALUES (${keys.map(()=>'?').join(',')})`).run(...keys.map(k=>values[k])).lastInsertRowid;}
   async update(values,predicates){const keys=Object.keys(values);return this.db.prepare(`UPDATE ${predicates.table} SET ${keys.map(k=>k+' = ?').join(',')} WHERE ${predicates.keys.join(' AND ')}`).run(...keys.map(k=>values[k]),...predicates.args).changes;}
 }
-function loader(store){
+function loader(store, databases){
  const cache=new Map();
- const native={ '@kit.ArkTS':{util:{generateRandomUUID:randomUUID}},'@kit.ArkData':{relationalStore:{SecurityLevel:{S1:1},getRdbStore:async()=>store,RdbPredicates:Predicates}} };
+ const native={ '@kit.ArkTS':{util:{generateRandomUUID:randomUUID}},'@kit.ArkData':{relationalStore:{SecurityLevel:{S1:1},getRdbStore:async(context,config)=>{if(!databases)return store;if(!databases.has(config.name))databases.set(config.name,new Store());return databases.get(config.name);},RdbPredicates:Predicates}} };
  function load(file){file=path.resolve(file); if(cache.has(file))return cache.get(file);const exports={};cache.set(file,exports);
  const result=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}});
  vm.runInNewContext(result.outputText,{exports,require:name=>{if(native[name])return native[name];if(name.startsWith('.'))return load(path.resolve(path.dirname(file),name+'.ets'));throw Error('Unexpected import '+name);},console,Date,JSON,Error,setTimeout});
@@ -77,6 +78,32 @@ async function main(){
  const legacy=new Store();legacy.db.exec("CREATE TABLE item (id TEXT PRIMARY KEY,name TEXT NOT NULL,category_id TEXT NOT NULL,expiry_date TEXT,lifecycle_status TEXT NOT NULL,created_at INTEGER NOT NULL,updated_at INTEGER NOT NULL,deleted_at INTEGER,pending INTEGER NOT NULL DEFAULT 1,remote_id TEXT); INSERT INTO item VALUES ('legacy','旧物品','food','2026-10-30','ACTIVE',1,1,NULL,0,'existing-remote'); PRAGMA user_version=1;");
  const oldLoad=loader(legacy),oldDb=oldLoad('data/local/AppDatabase').AppDatabase;oldDb.initialize({});await oldDb.getStore();const OldRepo=oldLoad('data/local/ItemLocalRepository').ItemLocalRepository;const oldItem=(await new OldRepo().listActive())[0];
  check('v1 升级保留旧记录、远端 ID 和同步状态',()=>{assert.equal(oldItem.name,'旧物品');assert.equal(oldItem.remoteId,'existing-remote');assert.equal(oldItem.pending,0);assert.equal(oldItem.expiryDate,'2026-10-30');assert.equal(oldItem.quantity,1);assert.equal(legacy.version,2);});
- store.db.close();legacy.db.close();console.log(`PASS: ${checks} frontend domain/storage checks. Native ArkData/notification APIs still require device verification.`);
+ const snapshot=await repo.exportBackup();
+ const restoredStore=new Store(),restoreLoad=loader(restoredStore);restoreLoad('data/local/AppDatabase').AppDatabase.initialize({});
+ const restored=new (restoreLoad('data/local/ItemLocalRepository').ItemLocalRepository)();
+ await restored.restoreBackup(snapshot,3);
+ const roundtrip=await restored.exportBackup();
+ check('完整备份恢复保留软删除、原始开封、备注、流水和远端 ID',()=>{assert.equal(roundtrip.items[0].remoteId,snapshot.items[0].remoteId);assert.equal(roundtrip.items[0].openedDate,'2026-10-01');assert.equal(roundtrip.items[0].notes,'包装完整');assert.ok(roundtrip.items[0].deletedAt);assert.equal(roundtrip.records.length,1);});
+ await assert.rejects(()=>restored.restoreBackup(snapshot,3));checks++;
+ const failedStore=new Store(),failedLoad=loader(failedStore);failedLoad('data/local/AppDatabase').AppDatabase.initialize({});const failed=new (failedLoad('data/local/ItemLocalRepository').ItemLocalRepository)();
+ await assert.rejects(()=>failed.restoreBackup({...snapshot,records:[...snapshot.records,{id:'bad',itemId:'missing',action:'CONSUMED',quantity:1,createdAt:1,revoked:0}]},3));
+ check('无效备份流水导致整个恢复回滚',()=>assert.equal(failedStore.db.prepare('SELECT count(*) n FROM item').get().n,0));
+ const engine=load('domain/RecognitionEngine').RecognitionEngine;
+ const cases=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../shared/recognition-test-cases.json'),'utf8'));
+ for(const c of cases)check('识别 '+c.id,()=>{const result=engine.parse(c.text);for(const key of ['name','production','expiry','shelfLife','unit'])assert.equal(result[key],c[key]);assert.equal(result.candidates.length,c.candidateCount);assert.equal(result.requiresConfirmation,true);});
+ const databases=new Map(),scopedLoad=loader(null,databases),scopedDb=scopedLoad('data/local/AppDatabase').AppDatabase;
+ scopedDb.initialize({});const scopedRepo=new (scopedLoad('data/local/ItemLocalRepository').ItemLocalRepository)();
+ await scopedRepo.create(make('guest'));const first=randomUUID(),second=randomUUID();await scopedDb.switchAccount(first);
+ check('账号数据库不读取访客物品',()=>assert.equal(databases.get('account_'+first+'.db').db.prepare('SELECT count(*) n FROM item').get().n,0));
+ await scopedRepo.create(make('account-a'));await scopedDb.switchAccount(second);assert.equal((await scopedRepo.listActive()).length,0);checks++;
+ await scopedDb.switchAccount(first);assert.equal((await scopedRepo.listActive())[0].id,'account-a');checks++;
+ await scopedDb.switchAccount();assert.equal((await scopedRepo.listActive())[0].id,'guest');checks++;
+ for(const db of databases.values())db.db.close();
+ const P=load('domain/UserProfile').ProfileDomain;
+ check('个人标签去空白、兼容中文分隔符并去重',()=>assert.equal(P.tags('花生，牛奶、花生; 芝麻').join('|'),'花生|牛奶|芝麻'));
+ check('昵称、头像和偏好数量边界',()=>{assert.ok(P.validate(P.empty(' ')));assert.ok(P.validate({...P.empty('小满'),avatarKey:'missing'}));assert.ok(P.validate({...P.empty('小满'),preferences:Array(21).fill('清淡')}));assert.equal(P.validate({...P.empty('小满'),avatarKey:'cat'}),'');});
+ check('忌口命中保留过期告警且不推荐食用',()=>{const text=P.advice({...make(),name:'花生牛奶',expiryDate:'2026-01-01'},'2026-10-03',{...P.empty('小满'),allergies:['花生']});assert.ok(text.includes('忌口'));assert.ok(text.includes('已超过'));});
+ check('饮食偏好不作用于非食品',()=>assert.equal(P.advice({...make(),categoryId:'cosmetics'},'2026-10-03',{...P.empty('小满'),allergies:['牛奶']}),D.advice({...make(),categoryId:'cosmetics'},'2026-10-03')));
+ store.db.close();legacy.db.close();restoredStore.db.close();failedStore.db.close();console.log(`PASS: ${checks} frontend domain/storage checks. Native ArkData/notification APIs still require device verification.`);
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

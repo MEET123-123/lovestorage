@@ -1,9 +1,11 @@
 import { Item, ShoppingEntry } from '../domain/Item';
 import { InventoryDomain } from '../domain/InventoryDomain';
 import { SectionTitle, EmptyState } from '../components/InventoryComponents';
+import { UserProfile, ProfileDomain } from '../domain/UserProfile';
 
 @Component
 export struct SuggestionsPanel {
+  @Prop profile: UserProfile = ProfileDomain.empty();
   @Prop items: Item[] = [];
   @Prop shopping: ShoppingEntry[] = [];
   @Prop today: string = '';
@@ -34,7 +36,7 @@ export struct SuggestionsPanel {
                   Text(item.name).fontSize(18).fontWeight(FontWeight.Medium).fontColor('#223D31').layoutWeight(1)
                   Text(InventoryDomain.statusLabel(item, this.today)).fontSize(12).fontColor(InventoryDomain.statusColor(item, this.today))
                 }.width('100%')
-                Text(InventoryDomain.advice(item, this.today)).fontSize(14).fontColor('#63766D').lineHeight(23).width('100%')
+                Text(ProfileDomain.advice(item, this.today, this.profile)).fontSize(14).fontColor('#63766D').lineHeight(23).width('100%')
                 Text('查看详情与处理 ›').fontSize(13).fontColor('#28785C').width('100%').onClick(() => this.onOpen(item))
               }.padding(18).backgroundColor('#FFFFFF').borderRadius(18)
             }

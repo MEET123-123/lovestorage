@@ -1,5 +1,6 @@
 import { Item, ConsumptionRecord } from './Item';
 import { ExpiryService, ExpiryEvaluation, ExpiryStatus, ShelfLifeUnit } from './ExpiryService';
+import { RecognitionEngine } from './RecognitionEngine';
 
 export interface CategoryView { id: string; name: string; mark: string; color: string; days: number; }
 export interface Overview { active: number; near: number; expired: number; consumed: number; discarded: number; }
@@ -99,15 +100,8 @@ export class InventoryDomain {
     return '把临期物品放在容易看见的位置，按产品说明优先使用，减少重复购买。';
   }
   static parseText(text: string): ParsedDraft {
-    const expiry = /(?:到期|有效期至|保质期至)[:：\s]*(\d{4}[-/.]\d{1,2}[-/.]\d{1,2})/.exec(text);
-    const production = /(?:生产日期|生产)[:：\s]*(\d{4}[-/.]\d{1,2}[-/.]\d{1,2})/.exec(text);
-    const life = /保质期[:：\s]*(\d+)\s*(天|个月|月|年)/.exec(text);
-    return { name: text.split('\n')[0].replace(/^(名称|品名)[:：\s]*/, '').slice(0, 80),
-      expiry: expiry ? InventoryDomain.normalizeDate(expiry[1]) : '', production: production ? InventoryDomain.normalizeDate(production[1]) : '',
-      shelfLife: life ? life[1] : '', unit: life ? (life[2] === '天' ? 0 : life[2] === '年' ? 2 : 1) : 0,
-      evidence: '仅按明确的日期标签提取；请对照包装核对名称、日期与单位后保存。' };
-  }
-  private static normalizeDate(text: string): string {
-    const p = text.split(/[-/.]/); return `${p[0]}-${p[1].padStart(2, '0')}-${p[2].padStart(2, '0')}`;
+    const draft = RecognitionEngine.parse(text);
+    return { name: draft.name, expiry: draft.expiry, production: draft.production, shelfLife: draft.shelfLife, unit: draft.unit,
+      evidence: draft.warnings.join('；') || '请对照包装逐项核对后保存。' };
   }
 }

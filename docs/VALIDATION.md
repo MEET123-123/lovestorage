@@ -1,3 +1,14 @@
+# 0.3.0 本地候选版验证（2026-10-03）
+
+- Maven verify：8 个 JUnit 方法，0 失败/错误。账号间 GET/PUT/PATCH/DELETE 与幂等重试隔离、密码散列/令牌散列、过期/退出/改密撤销、备份隔离及 409 冲突、请求验证、12 组算法样例均通过。
+- 前端主机：41 项业务与 SQLite 检查，包括账号/访客切换后的数据隔离、完整备份恢复、拒绝非空覆盖、无效流水导致事务回滚。
+- 保质期：9 组 fixture 与 2 个日历边界；OpenAPI 快照一致。
+- 真实 PostgreSQL：独立 smart_expiry_candidate，Flyway V1/V2/V3 与 Hibernate 校验通过；实际 ArkTS ApiClient 注册/登录、CRUD/重试、快照写入/读取/冲突、识别及退出撤销联调通过。联调仅使用生成的测试账号；测试物品已软删除，测试账号和快照保留在联调库。
+- 前端应用与 ohosTest HAP 编译通过。未连接设备，未执行原生 ArkData/Hypium、签名安装、实际提醒、UI 或性能容量验收。主机适配器不等同设备测试。
+- 运行说明与上线缺口：[LOCAL_CANDIDATE](LOCAL_CANDIDATE.md)。以下为历史版本记录。
+
+---
+
 # 前端增强版验证记录（2026-10-03）
 
 ## 实现

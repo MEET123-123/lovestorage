@@ -2,6 +2,8 @@ import { relationalStore } from '@kit.ArkData';
 import { util } from '@kit.ArkTS';
 import { Item, ItemMetadata, InventoryBatch, ConsumptionRecord, ShoppingEntry } from '../../domain/Item';
 import { AppDatabase } from './AppDatabase';
+import { InventoryBackup } from '../../domain/Backup';
+import { InventoryDomain } from '../../domain/InventoryDomain';
 
 export class ItemLocalRepository {
   private metadata(item: Item): string {
@@ -30,10 +32,10 @@ export class ItemLocalRepository {
   }
   async listActive(): Promise<Item[]> { return this.query(false); }
   async listPending(): Promise<Item[]> { return this.query(true); }
-  private async query(pending: boolean): Promise<Item[]> {
+  private async query(pending: boolean, all: boolean = false): Promise<Item[]> {
     const store = await AppDatabase.getStore();
     const result = await store.querySql('SELECT i.*, b.payload AS batch_payload FROM item i LEFT JOIN inventory_batch b ON b.item_id=i.id WHERE ' +
-      (pending ? 'i.pending = 1' : 'i.deleted_at IS NULL') + ' ORDER BY i.updated_at DESC');
+      (all ? '1 = 1' : pending ? 'i.pending = 1' : 'i.deleted_at IS NULL') + ' ORDER BY i.updated_at DESC');
     const items: Item[] = [];
     try {
       while (result.goToNextRow()) {
@@ -128,6 +130,43 @@ export class ItemLocalRepository {
     await store.executeSql('INSERT OR REPLACE INTO setting (key, value) VALUES (?, ?)', [key, value]);
   }
   async getServer(): Promise<string> { return this.getSetting('server'); }
+  async exportBackup(): Promise<InventoryBackup> {
+    return { schemaVersion: 1, items: await this.query(false, true), records: await this.records(), shopping: await this.shopping() };
+  }
+  async restoreBackup(backup: InventoryBackup, revision: number): Promise<void> {
+    if (backup.schemaVersion !== 1 || !Array.isArray(backup.items) || !Array.isArray(backup.records) || !Array.isArray(backup.shopping)) throw new Error('备份格式不支持');
+    if (backup.items.length > 10000 || backup.records.length > 10000 || backup.shopping.length > 10000) throw new Error('备份记录过多');
+    const local = await this.exportBackup();
+    if (local.items.length || local.records.length || local.shopping.length) throw new Error('仅可恢复到空账号库存，现有数据不会被覆盖');
+    const ids: string[] = [];
+    for (const item of backup.items) {
+      if (!item.id || ids.includes(item.id) || !Number.isFinite(item.createdAt) || !Number.isFinite(item.updatedAt)) throw new Error('备份物品标识或时间无效');
+      if (InventoryDomain.validate(item)) throw new Error('备份物品字段无效');
+      if (!['ACTIVE', 'CONSUMED', 'DISCARDED', 'ARCHIVED'].includes(item.lifecycleStatus)) throw new Error('备份状态无效');
+      ids.push(item.id);
+    }
+    const store = await AppDatabase.getStore();
+    store.beginTransaction();
+    try {
+      for (const item of backup.items) {
+        const values: relationalStore.ValuesBucket = { id: item.id, name: item.name, category_id: item.categoryId, expiry_date: item.expiryDate ?? null,
+          lifecycle_status: item.lifecycleStatus, created_at: item.createdAt, updated_at: item.updatedAt, deleted_at: item.deletedAt ?? null,
+          pending: 1, remote_id: item.remoteId ?? util.generateRandomUUID(), metadata: this.metadata(item) };
+        await store.insert('item', values);
+        await store.executeSql('INSERT INTO inventory_batch(id,item_id,payload) VALUES (?,?,?)', [item.id,item.id,this.batch(item)]);
+      }
+      for (const record of backup.records) {
+        if (!record.id || !ids.includes(record.itemId) || !['CONSUMED','DISCARDED'].includes(record.action) || !Number.isFinite(record.quantity) || record.quantity <= 0 || !Number.isFinite(record.createdAt) || ![0,1].includes(record.revoked)) throw new Error('备份流水无效');
+        await store.executeSql('INSERT INTO consumption_record(id,item_id,name,action,quantity,created_at,revoked) VALUES (?,?,?,?,?,?,?)', [record.id,record.itemId,record.name,record.action,record.quantity,record.createdAt,record.revoked]);
+      }
+      for (const entry of backup.shopping) {
+        if (!entry.id || !entry.name || entry.name.length > 80 || ![0,1].includes(entry.done) || !Number.isFinite(entry.createdAt)) throw new Error('备份补货条目无效');
+        await store.executeSql('INSERT INTO shopping_entry(id,name,done,created_at) VALUES (?,?,?,?)', [entry.id,entry.name,entry.done,entry.createdAt]);
+      }
+      await store.executeSql('INSERT OR REPLACE INTO setting(key,value) VALUES (?,?)', ['backup_revision',`${revision}`]);
+      store.commit();
+    } catch (error) { store.rollBack(); throw new Error(String(error)); }
+  }
   async setServer(url: string): Promise<void> {
     const store = await AppDatabase.getStore();
     const previous = await this.getServer();

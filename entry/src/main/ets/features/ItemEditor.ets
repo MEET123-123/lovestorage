@@ -2,6 +2,7 @@ import { Item } from '../domain/Item';
 import { InventoryDomain } from '../domain/InventoryDomain';
 import { ExpiryService, ShelfLifeUnit } from '../domain/ExpiryService';
 import { SectionTitle } from '../components/InventoryComponents';
+import { RecognitionEngine } from '../domain/RecognitionEngine';
 
 @Component
 export struct ItemEditor {
@@ -73,11 +74,15 @@ export struct ItemEditor {
   }
   private fillText(): void {
     if (!this.pasted.trim()) { this.error = '请先粘贴包装上的文字'; return; }
-    const draft = InventoryDomain.parseText(this.pasted);
-    this.name = draft.name; this.expiry = draft.expiry; this.production = draft.production;
-    this.shelfLife = draft.shelfLife; this.shelfUnit = draft.unit;
-    this.derive = draft.expiry === '' && draft.production !== '' && draft.shelfLife !== '';
-    this.evidence = draft.evidence; this.error = '';
+    const draft = RecognitionEngine.parse(this.pasted);
+    if (draft.name) this.name = draft.name;
+    if (draft.expiry) this.expiry = draft.expiry;
+    if (draft.production) this.production = draft.production;
+    if (draft.shelfLife) { this.shelfLife = draft.shelfLife; this.shelfUnit = draft.unit; }
+    if (draft.expiry) this.derive = false;
+    else if (draft.production && draft.shelfLife) this.derive = true;
+    this.evidence = draft.candidates.map((candidate) => `${candidate.evidence} → ${candidate.value}`).join('\n');
+    this.evidence += '\n' + draft.warnings.join('\n') + '\n规则提取，仍需逐项核对后保存。'; this.error = '';
   }
   private pickDate(field: string): void {
     const text = field === 'expiry' ? this.expiry : field === 'production' ? this.production : this.opened;

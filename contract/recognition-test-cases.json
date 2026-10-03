@@ -1,0 +1,14 @@
+[
+  {"id":"chinese","text":"品名：牛奶\n生产日期：2026年10月03日\n保质期：30天","name":"牛奶","production":"2026-10-03","expiry":"","shelfLife":"30","unit":0,"candidateCount":1},
+  {"id":"fullwidth","text":"名称：面霜\nＥＸＰ：２０２７／０２／０１","name":"面霜","production":"","expiry":"2027-02-01","shelfLife":"","unit":0,"candidateCount":1},
+  {"id":"invalid-leap","text":"到期：2026-02-29","name":"","production":"","expiry":"","shelfLife":"","unit":0,"candidateCount":0},
+  {"id":"leap","text":"MFG 2024.2.29 保质期12个月","name":"","production":"2024-02-29","expiry":"","shelfLife":"12","unit":1,"candidateCount":1},
+  {"id":"ambiguous","text":"到期：2027-01-01\nEXP:2027-02-01","name":"","production":"","expiry":"","shelfLife":"","unit":0,"candidateCount":2},
+  {"id":"repeated","text":"到期：2027-01-01\nEXP:2027-01-01","name":"","production":"","expiry":"2027-01-01","shelfLife":"","unit":0,"candidateCount":2},
+  {"id":"unlabeled","text":"2026-10-01\n10/02\nLOT20270101","name":"","production":"","expiry":"","shelfLife":"","unit":0,"candidateCount":0},
+  {"id":"reversed","text":"生产日期2027-10-01\n到期2026-10-01","name":"","production":"2027-10-01","expiry":"","shelfLife":"","unit":0,"candidateCount":2},
+  {"id":"ambiguous-life","text":"保质期12月\n保质期24月","name":"","production":"","expiry":"","shelfLife":"","unit":0,"candidateCount":0},
+  {"id":"large-life","text":"保质期999999999999999999999999年","name":"","production":"","expiry":"","shelfLife":"","unit":0,"candidateCount":0},
+  {"id":"year-unit","text":"产品名称:香皂\n制造日期:2026/1/2\n保质期:2年","name":"香皂","production":"2026-01-02","expiry":"","shelfLife":"2","unit":2,"candidateCount":1},
+  {"id":"month-overflow","text":"EXP 2027-13-01","name":"","production":"","expiry":"","shelfLife":"","unit":0,"candidateCount":0}
+]

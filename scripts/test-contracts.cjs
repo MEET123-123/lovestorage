@@ -51,6 +51,8 @@ async function main() {
   });
   ApiClient.baseUrl = url;
   await ApiClient.health();
+  const session = await ApiClient.authenticate('smoke_' + randomUUID().replaceAll('-', '').slice(0, 16), 'smoke-test-password-123', true);
+  ApiClient.token = session.accessToken;
   const id = randomUUID();
   const item = { id, name: 'Contract smoke', categoryId: 'food', expiryDate: '2026-10-09', lifecycleStatus: 'ACTIVE', createdAt: Date.now(), updatedAt: Date.now() };
   try {
@@ -71,6 +73,14 @@ async function main() {
     await ApiClient.upload(item, id);
   }
   await assert.rejects(() => ApiClient.request(`/items/${id}`, 'GET'));
-  console.log('PASS: actual ApiClient health, create, retry, update, lifecycle, detail, delete, retry-delete');
+  const snapshot = JSON.stringify({ schemaVersion: 1, items: [item], records: [], shopping: [] });
+  assert.equal((await ApiClient.backup(snapshot, 0)).revision, 1);
+  await assert.rejects(() => ApiClient.backup(snapshot, 0));
+  assert.equal((await ApiClient.fetchBackup()).payload, snapshot);
+  const draft = JSON.parse(await ApiClient.request('/recognition/text', 'POST', {text:'名称：牛奶\n生产日期：2026年10月03日\n保质期：30天'})).data;
+  assert.equal(draft.production, '2026-10-03'); assert.equal(draft.requiresConfirmation, true);
+  await ApiClient.logout();
+  await assert.rejects(() => ApiClient.request('/auth/me', 'GET'));
+  console.log('PASS: actual ApiClient auth, CRUD/retries, snapshot/read/conflict, recognition and logout');
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

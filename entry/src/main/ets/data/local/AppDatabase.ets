@@ -15,6 +15,22 @@ export class AppDatabase {
     AppDatabase.context = context;
   }
 
+  static async switchAccount(userId: string = ''): Promise<void> {
+    if (userId !== '' && !/^[a-f0-9-]{36}$/.test(userId)) throw new Error('账号标识无效');
+    if (AppDatabase.opening !== undefined) await AppDatabase.opening;
+    if (AppDatabase.store !== undefined) await AppDatabase.store.close();
+    AppDatabase.store = undefined;
+    AppDatabase.opening = undefined;
+    const previous = AppDatabase.CONFIG.name;
+    AppDatabase.CONFIG.name = userId === '' ? 'smart_expiry.db' : `account_${userId}.db`;
+    try { await AppDatabase.getStore(); }
+    catch (error) {
+      AppDatabase.CONFIG.name = previous; AppDatabase.store = undefined; AppDatabase.opening = undefined;
+      await AppDatabase.getStore();
+      throw new Error(String(error));
+    }
+  }
+
   static async getStore(): Promise<relationalStore.RdbStore> {
     if (AppDatabase.store !== undefined) return AppDatabase.store;
     if (AppDatabase.opening === undefined) {
