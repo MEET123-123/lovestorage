@@ -1,7 +1,7 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
 const {randomUUID}=require('node:crypto');
 const ts=require(path.join(process.env.DEVECO_HOME||'D:/DevEco/DevEco Studio','tools/hvigor/hvigor/node_modules/typescript'));
-const root=path.resolve(__dirname,'../harmonyos/entry/src/main/ets');
+const root=path.resolve(__dirname,'../entry/src/main/ets');
 function load(name,deps={}) {
  const exports={}; const source=ts.transpileModule(fs.readFileSync(path.join(root,name+'.ets'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText;
  vm.runInNewContext(source,{exports,require:key=>{assert.ok(deps[key],key);return deps[key];},Date,JSON,Error,console});return exports;

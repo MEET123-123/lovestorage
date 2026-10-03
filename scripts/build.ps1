@@ -12,7 +12,7 @@ if (-not (Test-Path "$DevEcoHome/tools/hvigor/bin/hvigorw.bat")) { throw 'Pass -
 $env:JAVA_HOME = $JavaHome
 $env:DEVECO_SDK_HOME = "$DevEcoHome/sdk"
 $env:PATH = "$JavaHome/bin;$DevEcoHome/tools/node;" + $env:PATH
-Push-Location (Join-Path $PSScriptRoot '../harmonyos')
+Push-Location (Join-Path $PSScriptRoot '..')
 try {
     & "$DevEcoHome/tools/ohpm/bin/ohpm.bat" install
     if ($LASTEXITCODE -ne 0) { throw 'ohpm install failed' }

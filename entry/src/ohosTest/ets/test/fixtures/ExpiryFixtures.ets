@@ -1,5 +1,5 @@
 // AUTO-GENERATED. DO NOT EDIT.
-// Source: /contract/expiry-test-cases.json
+// Source: /shared/expiry-test-cases.json
 
 export interface ExpiryFixture {
   id: string;
@@ -39,4 +39,73 @@ export const EXPIRY_FIXTURES: ExpiryFixture[] = [
     expiryDate: "2026-10-02",
     reminderDays: 7,
     expectedRemainingDays: 0,
-    expectedStatus: "NEAR_EXPIRY‹ˆ^XİYY™™Xİ]™Q^\Q]NˆŒŒ‹LLLˆ‚ˆKˆÂˆYˆ™^\™Y^Y\İ\™^H‹ˆÙ^NˆŒŒ‹LLLˆ‹ˆ^\Q]NˆŒŒ‹LLLH‹ˆ™[Z[™\‘^\ÎˆËˆ^XİY™[XZ[š[™Ñ^\ÎˆLKˆ^XİYİ]\Îˆ‘VT‘Q‹ˆ^XİYY™™Xİ]™Q^\Q]NˆŒŒ‹LLLH‚ˆKˆÂˆYˆ˜Ü›ÜÜË^YX\ˆ‹ˆÙ^NˆŒŒ‹LL‹LÌ‹ˆ^\Q]NˆŒŒËLKLÈ‹ˆ™[Z[™\‘^\ÎˆËˆ^XİY™[XZ[š[™Ñ^\Îˆˆ^XİYİ]\Îˆ““Ô“PS‹ˆ^XİYY™™Xİ]™Q^\Q]NˆŒŒËLKLÈ‚ˆKˆÂˆYˆ›Ü[™Y\[ËYX\›Y\ˆ‹ˆÙ^NˆŒŒ‹LLLˆ‹ˆ^\Q]NˆŒŒLKLH‹ˆÜ[™Y]NˆŒŒ‹LLH‹ˆY\“Ü[•˜[YNˆ‹ˆY\“Ü[•[š]ˆ“SÓ•‹ˆ™[Z[™\‘^\ÎˆËˆ^XİY™[XZ[š[™Ñ^\ÎˆLKˆ^XİYİ]\Îˆ‘VT‘Q‹ˆ^XİYY™™Xİ]™Q^\Q]NˆŒŒ‹LLLH‚ˆKˆÂˆYˆ››ÛZ[˜[Y^\KYX\›Y\‹][‹\[È‹ˆÙ^NˆŒŒ‹LLLˆ‹ˆ^\Q]NˆŒŒ‹LLLL‹ˆÜ[™Y]NˆŒŒ‹LKLH‹ˆY\“Ü[•˜[YNˆL‹ˆY\“Ü[•[š]ˆ“SÓ•‹ˆ™[Z[™\‘^\ÎˆËˆ^XİY™[XZ[š[™Ñ^\Îˆˆ^XİYİ]\Îˆ““Ô“PS‹ˆ^XİYY™™Xİ]™Q^\Q]NˆŒŒ‹LLLL‚ˆKˆÂˆYˆ›[ÛY[™XÛ[\‹ˆÙ^NˆŒŒ‹L‹LŒ‹ˆ^\Q]NˆŒŒËLL‹LÌH‹ˆÜ[™Y]NˆŒŒ‹LKLÌH‹ˆY\“Ü[•˜[YNˆKˆY\“Ü[•[š]ˆ“SÓ•‹ˆ™[Z[™\‘^\ÎˆËˆ^XİY™[XZ[š[™Ñ^\Îˆˆ^XİYİ]\Îˆ““Ô“PS‹ˆ^XİYY™™Xİ]™Q^\Q]NˆŒŒ‹L‹L‚ˆKˆÂˆYˆ›X\^YX\‹XÛ[\‹ˆÙ^NˆŒŒKL‹LŒ‹ˆ^\Q]NˆŒŒËLL‹LÌH‹ˆÜ[™Y]NˆŒŒL‹LH‹ˆY\“Ü[•˜[YNˆKˆY\“Ü[•[š]ˆ–QPTˆ‹ˆ™[Z[™\‘^\ÎˆËˆ^XİY™[XZ[š[™Ñ^\Îˆˆ^XİYİ]\Îˆ““Ô“PS‹ˆ^XİYY™™Xİ]™Q^\Q]NˆŒŒKL‹L‚ˆK—NÂ
+    expectedStatus: "NEAR_EXPIRY",
+    expectedEffectiveExpiryDate: "2026-10-02"
+  },
+  {
+    id: "expired-yesterday",
+    today: "2026-10-02",
+    expiryDate: "2026-10-01",
+    reminderDays: 7,
+    expectedRemainingDays: -1,
+    expectedStatus: "EXPIRED",
+    expectedEffectiveExpiryDate: "2026-10-01"
+  },
+  {
+    id: "cross-year",
+    today: "2026-12-30",
+    expiryDate: "2027-01-03",
+    reminderDays: 3,
+    expectedRemainingDays: 4,
+    expectedStatus: "NORMAL",
+    expectedEffectiveExpiryDate: "2027-01-03"
+  },
+  {
+    id: "opened-pao-earlier",
+    today: "2026-10-02",
+    expiryDate: "2028-01-01",
+    openedDate: "2026-08-01",
+    afterOpenValue: 2,
+    afterOpenUnit: "MONTH",
+    reminderDays: 7,
+    expectedRemainingDays: -1,
+    expectedStatus: "EXPIRED",
+    expectedEffectiveExpiryDate: "2026-10-01"
+  },
+  {
+    id: "nominal-expiry-earlier-than-pao",
+    today: "2026-10-02",
+    expiryDate: "2026-10-10",
+    openedDate: "2026-09-01",
+    afterOpenValue: 12,
+    afterOpenUnit: "MONTH",
+    reminderDays: 7,
+    expectedRemainingDays: 8,
+    expectedStatus: "NORMAL",
+    expectedEffectiveExpiryDate: "2026-10-10"
+  },
+  {
+    id: "month-end-clamp",
+    today: "2026-02-20",
+    expiryDate: "2027-12-31",
+    openedDate: "2026-01-31",
+    afterOpenValue: 1,
+    afterOpenUnit: "MONTH",
+    reminderDays: 7,
+    expectedRemainingDays: 8,
+    expectedStatus: "NORMAL",
+    expectedEffectiveExpiryDate: "2026-02-28"
+  },
+  {
+    id: "leap-year-clamp",
+    today: "2025-02-20",
+    expiryDate: "2027-12-31",
+    openedDate: "2024-02-29",
+    afterOpenValue: 1,
+    afterOpenUnit: "YEAR",
+    reminderDays: 7,
+    expectedRemainingDays: 8,
+    expectedStatus: "NORMAL",
+    expectedEffectiveExpiryDate: "2025-02-28"
+  },
+];

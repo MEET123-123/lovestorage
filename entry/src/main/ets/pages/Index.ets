@@ -95,7 +95,7 @@ struct Index {
   private async run(action: () => Promise<void>, message: string, rebuild: boolean = true): Promise<void> {
     if (this.busy) return;
     this.busy = true;
-    try { await action(); if (!SessionManager.active()) return; await this.reload(); if (rebuild) await this.refreshReminders(); this.message = message; }
+    try { await action(); if (!SessionManager.active()) { await this.redirectLogin(); return; } await this.reload(); if (rebuild) await this.refreshReminders(); this.message = message; }
     catch (error) { this.message = `操作未完成，本地已保存的数据会保留：${String(error)}`; if (!SessionManager.active()) await this.redirectLogin(); }
     finally { this.busy = false; }
   }

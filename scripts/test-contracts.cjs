@@ -18,9 +18,9 @@ function load(file, dependencies = {}) {
   return exports;
 }
 async function main() {
-  const { ExpiryService } = load('harmonyos/entry/src/main/ets/domain/ExpiryService.ets');
+  const { ExpiryService } = load('entry/src/main/ets/domain/ExpiryService.ets');
   const service = new ExpiryService();
-  const fixtures = JSON.parse(fs.readFileSync(path.join(root, 'shared/expiry-test-cases.json')));
+  const fixtures = JSON.parse(fs.readFileSync(path.join(root, 'contract/expiry-test-cases.json')));
   for (const test of fixtures) {
     const actual = service.evaluate(test.expiryDate, test.openedDate, test.afterOpenValue, test.afterOpenUnit, test.reminderDays, test.today);
     assert.equal(actual.effectiveExpiryDate, test.expectedEffectiveExpiryDate ?? undefined, test.id);
@@ -31,7 +31,7 @@ async function main() {
   assert.equal(service.deriveExpiryDate('2024-02-29', 1, 'YEAR'), '2025-02-28');
   const serverContract = path.resolve(root, '../lovestorage/openapi/smart-expiry-v1.yaml');
   if (fs.existsSync(serverContract)) {
-    assert.equal(fs.readFileSync(serverContract, 'utf8'), fs.readFileSync(path.join(root, 'openapi/smart-expiry-v1.yaml'), 'utf8'));
+    assert.equal(fs.readFileSync(serverContract, 'utf8'), fs.readFileSync(path.join(root, 'contract/smart-expiry-v1.yaml'), 'utf8'));
     assert.deepEqual(fixtures, JSON.parse(fs.readFileSync(path.resolve(root, '../lovestorage/shared/expiry-test-cases.json'))));
   }
   console.log(`PASS: ${fixtures.length} expiry fixtures, 2 calendar boundaries, contract snapshot equality`);
@@ -46,7 +46,7 @@ async function main() {
       return { responseCode: result.status, result: await result.text() };
     } })
   };
-  const { ApiClient } = load('harmonyos/entry/src/main/ets/data/remote/ApiClient.ets', {
+  const { ApiClient } = load('entry/src/main/ets/data/remote/ApiClient.ets', {
     '@kit.NetworkKit': { http }, '../../domain/ExpiryService': { ExpiryService }
   });
   ApiClient.baseUrl = url;

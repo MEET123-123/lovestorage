@@ -1,7 +1,7 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
 const {randomUUID}=require('node:crypto');
 const {DatabaseSync}=require('node:sqlite');
-const root=path.resolve(__dirname,'../harmonyos/entry/src/main/ets');
+const root=path.resolve(__dirname,'../entry/src/main/ets');
 const ts=require(path.join(process.env.DEVECO_HOME||'D:/DevEco/DevEco Studio','tools/hvigor/hvigor/node_modules/typescript'));
 let checks=0;
 function check(name,body){body(); checks++; console.log('PASS '+name);}
@@ -89,7 +89,7 @@ async function main(){
  await assert.rejects(()=>failed.restoreBackup({...snapshot,records:[...snapshot.records,{id:'bad',itemId:'missing',action:'CONSUMED',quantity:1,createdAt:1,revoked:0}]},3));
  check('无效备份流水导致整个恢复回滚',()=>assert.equal(failedStore.db.prepare('SELECT count(*) n FROM item').get().n,0));
  const engine=load('domain/RecognitionEngine').RecognitionEngine;
- const cases=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../shared/recognition-test-cases.json'),'utf8'));
+ const cases=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../contract/recognition-test-cases.json'),'utf8'));
  for(const c of cases)check('识别 '+c.id,()=>{const result=engine.parse(c.text);for(const key of ['name','production','expiry','shelfLife','unit'])assert.equal(result[key],c[key]);assert.equal(result.candidates.length,c.candidateCount);assert.equal(result.requiresConfirmation,true);});
  const databases=new Map(),scopedLoad=loader(null,databases),scopedDb=scopedLoad('data/local/AppDatabase').AppDatabase;
  scopedDb.initialize({});const scopedRepo=new (scopedLoad('data/local/ItemLocalRepository').ItemLocalRepository)();
