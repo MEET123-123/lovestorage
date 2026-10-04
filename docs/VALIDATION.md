@@ -1,3 +1,32 @@
+# 2026-10-04 算法目录与云部署补全验证
+
+- Java Maven verify：16 项测试通过，涵盖算法共享样例、认证/账号隔离、库存同步、事件分页导出与生产配置限制。
+- 前端领域/存储适配器：104 项检查通过；登录与契约检查通过。
+- 实际 HTTP 联调：当前打包 JAR 在 127.0.0.1:19091、local profile、隔离 H2 内存数据库运行，前端真实 ApiClient 经 fetch 适配器完成注册登录、库存 CRUD/重试、备份冲突、识别、多批次同步/版本冲突、事件发布/导出/重试去重及退出撤销。此项不替代 PostgreSQL 与真机验收。
+- Python 离线流程：6 项测试通过；真实运行 Mock 事件 → Dataset → 评测报告 → Registry 校验。
+- 部署配置检查：2 项 Python 测试通过，Shell 脚本语法检查与 YAML 解析通过。
+- 应用与测试 HAP 构建通过，未签名，未执行真机 UI / 通知验收。
+- 发布包包含 JAR、Dockerfile、Compose、操作文档，排除实际 secrets、证书与开发数据库。
+- 云服务器及其数据库尚未连接；本文不宣称容器已在云端启动或已完成真实 PostgreSQL 部署验收。
+
+源码及规则目录见 [algorithm](../algorithm/README.md)，部署步骤见 [CLOUD_DEPLOYMENT.md](CLOUD_DEPLOYMENT.md)。下面保留较早轮次记录。
+
+# 2026-10-04 V2 本地主机验证
+
+- Maven verify：14 项测试，0 失败、0 错误；打包成功。
+- 前端领域/SQLite 适配器：90 项检查通过。
+- OpenAPI 快照、9 个日期样例、2 个自然月/年边界与登录流程检查通过。
+- 应用 HAP 与测试 HAP 构建成功，均未签名；原生 ArkData、UI 和系统通知未在真机执行。
+- 数据升级：本地 schema v3，后端 Flyway V5；完整备份 schemaVersion 2 兼容旧版。
+- Mock 拍照、语音、条码与预测数据只用于业务链路调试，未进行真实 OCR 或模型效果评测。
+- 具体功能与操作入口见 [V2_IMPLEMENTATION.md](V2_IMPLEMENTATION.md)。
+
+下面保留历史验证记录，旧轮次统计不代表当前功能集。
+
+## 2026-10-03 V2.0 Today / Attention（工作区）
+
+后端 Maven verify：12 个测试，0 失败；前端 76 项领域/存储检查、登录检查与共享契约检查通过。应用及测试 HAP 构建成功，未签名、未真机执行。OpenAPI YAML / Postman JSON 已解析，JAR 内 Attention 规则资源已核对。完整范围与剩余差距见 [V2 实施附录](V2_IMPLEMENTATION.md)。
+
 # 0.3.0 本地候选版验证（2026-10-03）
 
 # 0.4.0 个人资料与本地登录方式验证（2026-10-03）

@@ -1,3 +1,9 @@
+> 算法整理与云部署：参见 [algorithm](algorithm/README.md) 和 [云服务器/已有数据库部署步骤](docs/CLOUD_DEPLOYMENT.md)。
+
+> 2026-10-04 更新：已接入多批次/部分消耗、完整库存双向同步与冲突选择、持久化识别草稿和 Mock 调试入口。入口和本地测试步骤见 [V2 实施说明](docs/V2_IMPLEMENTATION.md)。Mock 不代表真实 OCR/语音或模型训练能力；当前为本地可构建候选版。
+
+> 主设计现统一为 [V2.0 收敛版](docs/SmartExpiry_Technical_Design_V2.0.md)。本轮 Today / Attention 工作区实现、测试与剩余差距见 [V2 实施附录](docs/V2_IMPLEMENTATION.md)。
+
 > 当前本地候选版：0.4.0。新增账号隔离、完整快照备份/恢复、规则识别、个人资料和仅限本地 profile 的手机号验证码调试。短信调试不会发送短信；华为账号认证尚未配置。启动与使用见 [本地候选版说明](docs/LOCAL_CANDIDATE.md)。除健康检查、登录能力查询和登录路由外，API 需要 Bearer 令牌。
 
 # lovestorage-server
@@ -24,7 +30,7 @@ Java 后端独立仓库。M1 基线采用 Java 21 + Spring Boot 4.1.1 + PostgreS
 
 - 负责 Item / InventoryBatch / Category 等服务端领域逻辑与 REST API。
 - `openapi/smart-expiry-v1.yaml` 是前后端 HTTP 契约真源。
-- `shared/expiry-test-cases.json` 是 ArkTS / Java 保质期规则真源。
+- `algorithm/contracts/expiry-test-cases.json` 是 ArkTS / Java 保质期规则真源。
 - 数据库 Schema 由 Flyway 管理。
 
 ## 目录
@@ -32,7 +38,7 @@ Java 后端独立仓库。M1 基线采用 Java 21 + Spring Boot 4.1.1 + PostgreS
 ```text
 src/
 openapi/
-shared/
+algorithm/contracts/
 scripts/
 docs/
 .github/workflows/
@@ -75,7 +81,7 @@ API 变更顺序：
 
 ## 共享 expiry 规则
 
-修改 `shared/expiry-test-cases.json` 后必须运行：
+修改 `algorithm/contracts/expiry-test-cases.json` 后必须运行：
 
 ```bash
 ./mvnw test

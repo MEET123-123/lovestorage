@@ -9,3 +9,9 @@ data/
 .env
 .env.*
 !.env.example
+deploy/secrets/
+deploy/certs/
+*.dump
+*.partial
+algorithm/output/
+__pycache__/

@@ -1,6 +1,6 @@
 package com.smartexpiry.item.api;
 
-import com.smartexpiry.expiry.domain.ExpiryStatus;
+import com.smartexpiry.algorithm.expiry.ExpiryStatus;
 import com.smartexpiry.item.domain.ItemLifecycleStatus;
 
 import java.math.BigDecimal;

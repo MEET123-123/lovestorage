@@ -1,5 +1,7 @@
 package com.smartexpiry.recognition;
 
+import com.smartexpiry.algorithm.recognition.RecognitionEngine;
+
 import com.smartexpiry.common.api.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;

@@ -38,6 +38,8 @@ public class ItemEntity {
 
     @Version
     private long version;
+    @Column(name="sync_payload",columnDefinition="TEXT") private String syncPayload;
+    @Column(name="sync_fingerprint",length=64) private String syncFingerprint;
 
     protected ItemEntity() {}
 
@@ -53,6 +55,10 @@ public class ItemEntity {
     }
 
     public String getId() { return id; }
+    public long getVersion() { return version; }
+    public String getSyncPayload() { return syncPayload; }
+    public String getSyncFingerprint() { return syncFingerprint; }
+    public void syncMetadata(String payload,String fingerprint) { this.syncPayload=payload; this.syncFingerprint=fingerprint; }
     public String getOwnerId() { return ownerId; }
     public void assignOwner(String ownerId) { this.ownerId = ownerId; }
     public String getName() { return name; }
@@ -64,6 +70,7 @@ public class ItemEntity {
     public Instant getDeletedAt() { return deletedAt; }
 
     public void update(String name, String categoryId, String brand, Instant now) {
+        this.syncFingerprint=null;
         this.name = name;
         this.categoryId = categoryId;
         this.brand = brand;
@@ -71,11 +78,13 @@ public class ItemEntity {
     }
 
     public void softDelete(Instant now) {
+        this.syncFingerprint=null;
         this.deletedAt = now;
         this.updatedAt = now;
     }
 
     public void changeLifecycle(ItemLifecycleStatus status, Instant now) {
+        this.syncFingerprint=null;
         this.lifecycleStatus = status;
         this.updatedAt = now;
     }

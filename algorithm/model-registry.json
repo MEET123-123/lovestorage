@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "active": "attention-rule-v1",
+  "models": [
+    {"id":"attention-rule-v1","kind":"RULE","mode":"ACTIVE","mock":false,"artifact":"contracts/attention-rules.json"},
+    {"id":"forecast-mock-v1","kind":"FORECAST","mode":"SHADOW","mock":true,"trafficPercent":0,"description":"Synthetic fixed-rate forecast for UI checks; never overrides expiry or safety"}
+  ]
+}

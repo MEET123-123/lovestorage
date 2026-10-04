@@ -5,7 +5,7 @@
 ## 契约真源
 
 - HTTP：`openapi/smart-expiry-v1.yaml`
-- Expiry 规则：`shared/expiry-test-cases.json`
+- Expiry 规则：`algorithm/contracts/expiry-test-cases.json`
 
 后端合并契约变更后，前端通过其 `scripts/sync_contracts.py` 更新快照。
 

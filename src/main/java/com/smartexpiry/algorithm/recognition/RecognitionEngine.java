@@ -1,4 +1,4 @@
-package com.smartexpiry.recognition;
+package com.smartexpiry.algorithm.recognition;
 
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;

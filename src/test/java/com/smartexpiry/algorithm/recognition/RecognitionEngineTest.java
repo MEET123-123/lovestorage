@@ -1,4 +1,4 @@
-package com.smartexpiry.recognition;
+package com.smartexpiry.algorithm.recognition;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class RecognitionEngineTest {
     @Test void sharedFixtures() throws Exception {
         var json = JsonMapper.builder().build(); var engine = new RecognitionEngine();
-        try (var stream = getClass().getResourceAsStream("/shared/recognition-test-cases.json")) {
+        try (var stream = getClass().getResourceAsStream("/algorithm/contracts/recognition-test-cases.json")) {
             for (var fixture : json.readTree(stream)) {
                 var draft = engine.parse(fixture.get("text").asText()); var actual = json.valueToTree(draft);
                 for (String field : new String[]{"name","production","expiry","shelfLife","unit"})

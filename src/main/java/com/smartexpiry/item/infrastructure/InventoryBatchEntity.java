@@ -1,6 +1,6 @@
 package com.smartexpiry.item.infrastructure;
 
-import com.smartexpiry.expiry.domain.ShelfLifeUnit;
+import com.smartexpiry.algorithm.expiry.ShelfLifeUnit;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -50,6 +50,7 @@ public class InventoryBatchEntity {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+    @Column(name="lifecycle_status",nullable=false,length=32) private String lifecycleStatus="ACTIVE";
 
     protected InventoryBatchEntity() {}
 
@@ -74,6 +75,10 @@ public class InventoryBatchEntity {
     }
 
     public String getId() { return id; }
+    public String getLifecycleStatus() { return lifecycleStatus; }
+    public void setLifecycleStatus(String value) { lifecycleStatus=value; }
+    public Instant getCreatedAt() { return createdAt; }
+    public Instant getUpdatedAt() { return updatedAt; }
     public String getItemId() { return itemId; }
     public BigDecimal getQuantity() { return quantity; }
     public String getUnit() { return unit; }

@@ -1,6 +1,6 @@
 package com.smartexpiry.item.api;
 
-import com.smartexpiry.expiry.domain.ShelfLifeUnit;
+import com.smartexpiry.algorithm.expiry.ShelfLifeUnit;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;

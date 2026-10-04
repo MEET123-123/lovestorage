@@ -27,9 +27,10 @@ public class BackupController {
     @PutMapping public ApiResponse<Backup> save(@Valid @RequestBody Save body) {
         try {
             var doc = json.readTree(body.payload());
-            if (doc.path("schemaVersion").asInt() != 1 || !doc.path("items").isArray()
+            if (!java.util.Set.of(1,2).contains(doc.path("schemaVersion").asInt()) || !doc.path("items").isArray()
                 || !doc.path("records").isArray() || !doc.path("shopping").isArray()
-                || doc.path("items").size() > 10000 || doc.path("records").size() > 10000 || doc.path("shopping").size() > 10000)
+                || doc.path("items").size() > 10000 || doc.path("records").size() > 10000 || doc.path("shopping").size() > 10000
+                || doc.path("schemaVersion").asInt()==2 && (!doc.path("batches").isArray() || doc.path("batches").size()>10000))
                 throw new IllegalArgumentException();
         } catch (Exception ex) { throw new BusinessException(100001,"备份格式无效"); }
         Instant now = Instant.now();

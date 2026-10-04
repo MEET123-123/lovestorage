@@ -1,4 +1,4 @@
-package com.smartexpiry.expiry.domain;
+package com.smartexpiry.algorithm.expiry;
 
 import org.springframework.stereotype.Component;
 
@@ -7,6 +7,9 @@ import java.time.temporal.ChronoUnit;
 
 @Component
 public class ExpiryService {
+    public static int defaultReminderDays(String categoryId) {
+        return switch (categoryId) { case "cosmetics" -> 30; case "pet_food" -> 14; default -> 7; };
+    }
 
     public ExpiryEvaluation evaluate(
         LocalDate expiryDate,

@@ -61,6 +61,29 @@ class AuthIsolationIntegrationTest {
         assertThat(send(token,"GET","/items",null).statusCode()).isEqualTo(401);
         assertThat(send("","POST","/auth/register","{\"username\":\"bad\",\"password\":\"short\"}").statusCode()).isEqualTo(400);
     }
+    @Test void attentionIsAuthenticatedAndAccountScoped() throws Exception {
+        assertThat(send("","GET","/attention",null).statusCode()).isEqualTo(401);
+        String a=register("at"+UUID.randomUUID().toString().substring(0,8));
+        String b=register("bt"+UUID.randomUUID().toString().substring(0,8));
+        String id=UUID.randomUUID().toString();
+        assertThat(send(a,"POST","/items","{\"clientId\":\""+id+"\",\"name\":\"Attention private\",\"categoryId\":\"food\",\"expiryDate\":\"2000-01-01\"}").statusCode()).isEqualTo(200);
+        var result=send(a,"GET","/attention?limit=1",null);
+        assertThat(result.statusCode()).isEqualTo(200);
+        assertThat(mapper.readTree(result.body()).path("data").get(0).path("itemId").asText()).isEqualTo(id);
+        assertThat(mapper.readTree(result.body()).path("data").get(0).path("score").asInt()).isEqualTo(100);
+        assertThat(mapper.readTree(result.body()).path("data").get(0).path("ruleVersion").asText()).isEqualTo("attention-rule-v1");
+        assertThat(send(b,"GET","/attention",null).body()).doesNotContain(id);
+        assertThat(send(a,"GET","/attention?limit=0",null).statusCode()).isEqualTo(400);
+        assertThat(send(a,"GET","/attention?limit=51",null).statusCode()).isEqualTo(400);
+        assertThat(send(a,"PUT","/items/"+id,"{\"lifecycleStatus\":\"CONSUMED\"}").statusCode()).isEqualTo(200);
+        assertThat(send(a,"GET","/attention",null).body()).doesNotContain(id);
+        String petId=UUID.randomUUID().toString();
+        String date=java.time.LocalDate.now(java.time.ZoneId.of("Asia/Shanghai")).plusDays(10).toString();
+        var pet=send(a,"POST","/items","{\"clientId\":\""+petId+"\",\"name\":\"Pet food\",\"categoryId\":\"pet_food\",\"expiryDate\":\""+date+"\"}");
+        assertThat(pet.statusCode()).isEqualTo(200);
+        assertThat(mapper.readTree(pet.body()).path("data").path("expiryStatus").asText()).isEqualTo("NEAR_EXPIRY");
+        assertThat(send(a,"GET","/attention",null).body()).contains(petId,"WITHIN_REMINDER_WINDOW");
+    }
     @Test void backupIsolationConflictAndRecognition() throws Exception {
         String a = register("d"+UUID.randomUUID().toString().substring(0,8));
         String b = register("e"+UUID.randomUUID().toString().substring(0,8));

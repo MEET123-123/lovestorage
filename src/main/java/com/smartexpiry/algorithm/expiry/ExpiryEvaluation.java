@@ -1,4 +1,4 @@
-package com.smartexpiry.expiry.domain;
+package com.smartexpiry.algorithm.expiry;
 
 import java.time.LocalDate;
 

@@ -1,0 +1,63 @@
+name: smart-expiry-cloud
+services:
+  backend:
+    image: ${APP_IMAGE:-smart-expiry-server:cloud-local}
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: ${DB_URL:?Set the existing PostgreSQL JDBC URL in .env}
+      DB_USERNAME: ${DB_USERNAME:?Set the application database account in .env}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError
+    secrets:
+      - source: db_password
+        target: spring.datasource.password
+    volumes:
+      - ./certs:/app/certs:ro
+    ports:
+      - "127.0.0.1:18081:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: ${APP_MEMORY_LIMIT:-1g}
+    pids_limit: 200
+    stop_grace_period: 40s
+    healthcheck:
+      test: [CMD, bash, /app/healthcheck.sh]
+      interval: 30s
+      timeout: 5s
+      start_period: 90s
+      retries: 3
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: '5' }
+  caddy:
+    profiles: [https]
+    image: ${CADDY_IMAGE:-caddy:2-alpine}
+    restart: unless-stopped
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:-api.example.com}
+      ACME_EMAIL: ${ACME_EMAIL:-admin@example.com}
+    ports: ["80:80", "443:443", "443:443/udp"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend: { condition: service_healthy }
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: '5' }
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+volumes:
+  caddy_data:
+  caddy_config:

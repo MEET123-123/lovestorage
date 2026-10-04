@@ -136,7 +136,9 @@
         "method": "GET",
         "header": [],
         "url": "{{baseUrl}}/api/v1/auth/methods",
-        "auth": { "type": "noauth" }
+        "auth": {
+          "type": "noauth"
+        }
       },
       "event": [
         {
@@ -558,12 +560,21 @@
       "name": "13A 保存当前账号个人资料",
       "request": {
         "method": "PUT",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
         "url": "{{baseUrl}}/api/v1/profile",
         "body": {
           "mode": "raw",
           "raw": "{\n  \"displayName\": \"Postman 测试昵称\",\n  \"avatarKey\": \"leaf\",\n  \"bio\": \"个人资料接口联调\",\n  \"allergies\": [\"花生\"],\n  \"dislikes\": [\"香菜\"],\n  \"preferences\": [\"清淡\"]\n}",
-          "options": { "raw": { "language": "json" } }
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
         }
       },
       "event": [
@@ -596,6 +607,216 @@
             "exec": [
               "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
               "pm.test('返回忌口列表', () => pm.expect(pm.response.json().data.allergies).to.be.an('array'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 今日关注排序",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/attention?limit=10",
+        "description": "认证后的同步库存投影；本机 Today 独立使用本地数据和 snooze。优先级不是安全等级。"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Attention 返回 200\", () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test(\"返回可解释、稳定的规则结果\", () => {",
+              "  pm.expect(body.code).to.eql(0); pm.expect(body.data).to.be.an(\"array\");",
+              "  pm.expect(body.data.length).to.be.at.most(10);",
+              "  body.data.forEach((row, i) => {",
+              "    pm.expect(row.ruleVersion).to.eql(\"attention-rule-v1\");",
+              "    pm.expect(row.priority).to.be.oneOf([\"HIGH\", \"MEDIUM\", \"LOW\"]);",
+              "    pm.expect(row.reasonCodes).to.be.an(\"array\").that.is.not.empty;",
+              "    if (i) pm.expect(body.data[i - 1].score).to.be.at.least(row.score);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 完整双批次同步",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/sync/inventory/{{syncId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"payload\":{{syncPayload}}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.environment.set('syncId',pm.variables.replaceIn('{{$guid}}'));",
+              "const doc={item:{name:'Postman 双批次牛奶',categoryId:'food',lifecycleStatus:'ACTIVE'},batches:[1,2].map(n=>({id:pm.variables.replaceIn('{{$guid}}'),quantity:n,unit:'件',expiryDate:'2027-01-01',lifecycleStatus:'ACTIVE'}))};",
+              "pm.environment.set('syncPayload',JSON.stringify(JSON.stringify(doc)));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('完整同步成功',()=>pm.response.to.have.status(200));",
+              "const snapshot=pm.response.json().data;pm.environment.set('syncVersion',snapshot.version);",
+              "pm.test('保留两个批次',()=>pm.expect(JSON.parse(snapshot.payload).batches.length).to.eql(2));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 查看完整库存",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/sync/inventory"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('完整库存列表成功',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "17 幂等重试完整同步",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/sync/inventory/{{syncId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"payload\":{{syncPayload}}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('相同内容重试成功',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "18 采集本地事件",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/events",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"events\":[{\"eventId\":\"{{eventId}}\",\"eventType\":\"ITEM_UPDATED\",\"eventVersion\":\"1.0\",\"occurredAt\":\"{{eventAt}}\",\"properties\":{\"itemId\":\"{{syncId}}\"}}]}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.environment.set('eventId',pm.variables.replaceIn('{{$guid}}'));",
+              "pm.environment.set('eventAt',new Date().toISOString());"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('事件已接受',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "19 事件积压与发布数",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/events/status"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('请求成功',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "20 分页导出算法事件",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/events/export?limit=500"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('请求成功',()=>pm.response.to.have.status(200));"
             ]
           }
         }

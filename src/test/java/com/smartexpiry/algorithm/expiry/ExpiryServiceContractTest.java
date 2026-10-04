@@ -1,9 +1,9 @@
-package com.smartexpiry.expiry;
+package com.smartexpiry.algorithm.expiry;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
-import com.smartexpiry.expiry.domain.ExpiryService;
-import com.smartexpiry.expiry.domain.ShelfLifeUnit;
+import com.smartexpiry.algorithm.expiry.ExpiryService;
+import com.smartexpiry.algorithm.expiry.ShelfLifeUnit;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
@@ -17,7 +17,7 @@ class ExpiryServiceContractTest {
 
     @Test
     void sharedExpiryCasesMustMatchJavaRules() throws Exception {
-        InputStream input = getClass().getClassLoader().getResourceAsStream("shared/expiry-test-cases.json");
+        InputStream input = getClass().getClassLoader().getResourceAsStream("algorithm/contracts/expiry-test-cases.json");
         assertNotNull(input, "shared fixture must be on test classpath");
 
         JsonNode cases = JsonMapper.builder().build().readTree(input);

@@ -1,4 +1,4 @@
-package com.smartexpiry.expiry.domain;
+package com.smartexpiry.algorithm.expiry;
 
 public enum ExpiryStatus {
     UNKNOWN,

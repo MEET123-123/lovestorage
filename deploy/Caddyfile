@@ -1,0 +1,14 @@
+{
+    email {$ACME_EMAIL}
+}
+{$APP_DOMAIN} {
+    request_body {
+        max_size 2MB
+    }
+    reverse_proxy backend:8080
+    header {
+        X-Content-Type-Options nosniff
+        Referrer-Policy no-referrer
+        -Server
+    }
+}

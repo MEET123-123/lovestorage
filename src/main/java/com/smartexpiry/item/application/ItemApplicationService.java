@@ -3,8 +3,8 @@ package com.smartexpiry.item.application;
 import com.smartexpiry.category.CategoryRepository;
 import com.smartexpiry.auth.AuthService;
 import com.smartexpiry.common.exception.BusinessException;
-import com.smartexpiry.expiry.domain.ExpiryEvaluation;
-import com.smartexpiry.expiry.domain.ExpiryService;
+import com.smartexpiry.algorithm.expiry.ExpiryEvaluation;
+import com.smartexpiry.algorithm.expiry.ExpiryService;
 import com.smartexpiry.item.api.CreateItemRequest;
 import com.smartexpiry.item.api.ItemResponse;
 import com.smartexpiry.item.api.UpdateItemRequest;
@@ -25,13 +25,17 @@ import java.util.UUID;
 
 @Service
 public class ItemApplicationService {
-    private static final int DEFAULT_REMINDER_DAYS = 7;
 
     private final ItemJpaRepository itemRepository;
     private final InventoryBatchJpaRepository batchRepository;
     private final CategoryRepository categoryRepository;
     private final ExpiryService expiryService;
     private final Clock clock;
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.smartexpiry.events.EventStore events;
+    private void record(String type,String id) {
+        events.append(UUID.randomUUID().toString(),AuthService.userId(),type,Instant.now(clock),"{\"itemId\":\""+id+"\"}");
+    }
 
     @org.springframework.beans.factory.annotation.Autowired
     public ItemApplicationService(ItemJpaRepository itemRepository,
@@ -80,6 +84,7 @@ public class ItemApplicationService {
             request.openedDate(), request.afterOpenValue(), request.afterOpenUnit(), now, now
         );
         batchRepository.save(batch);
+        record("ITEM_CREATED",itemId);
         return toResponse(item, batch);
     }
 
@@ -99,6 +104,7 @@ public class ItemApplicationService {
     @Transactional
     public ItemResponse update(String id, UpdateItemRequest request) {
         ItemEntity item = findItem(id);
+        var previousStatus=item.getLifecycleStatus();
         InventoryBatchEntity batch = findBatch(id);
         Instant now = Instant.now(clock);
 
@@ -124,20 +130,35 @@ public class ItemApplicationService {
         var afterUnit = request.afterOpenUnit() == null ? batch.getAfterOpenUnit() : request.afterOpenUnit();
         validateShelfLife(production, expiry, life, lifeUnit);
         validateDates(production, expiry, opened, after, afterUnit);
+        var children=batchRepository.findByItemIdInOrderByCreatedAtAsc(List.of(id));
+        if(children.size()>1 && (request.quantity()!=null || request.unit()!=null))
+            throw new BusinessException(100001,"多批次数量和单位请通过完整库存同步修改");
         batch.update(quantity, unit, production, expiry, life, lifeUnit, opened, after, afterUnit, now);
+        if(request.lifecycleStatus()!=null) for(var child:children) {
+            if(request.lifecycleStatus()==ItemLifecycleStatus.ACTIVE && child.getQuantity().signum()==0)
+                throw new BusinessException(100001,"耗尽批次请通过完整库存同步恢复");
+            child.setLifecycleStatus(request.lifecycleStatus()==ItemLifecycleStatus.ARCHIVED?"ACTIVE":request.lifecycleStatus().name());
+        }
+        record(request.lifecycleStatus()!=null && request.lifecycleStatus()!=previousStatus
+            ? request.lifecycleStatus()==ItemLifecycleStatus.CONSUMED?"ITEM_CONSUMED":request.lifecycleStatus()==ItemLifecycleStatus.DISCARDED?"ITEM_DISCARDED":"ITEM_UPDATED"
+            : "ITEM_UPDATED",id);
         return toResponse(item, batch);
     }
 
     @Transactional
     public void delete(String id) {
         findItem(id).softDelete(Instant.now(clock));
+        record("ITEM_DELETED",id);
     }
 
     private ItemResponse toResponse(ItemEntity item, InventoryBatchEntity batch) {
         ExpiryEvaluation evaluation = expiryService.evaluate(batch.getExpiryDate(), batch.getOpenedDate(),
-            batch.getAfterOpenValue(), batch.getAfterOpenUnit(), "cosmetics".equals(item.getCategoryId()) ? 30 : DEFAULT_REMINDER_DAYS, LocalDate.now(clock));
+            batch.getAfterOpenValue(), batch.getAfterOpenUnit(), ExpiryService.defaultReminderDays(item.getCategoryId()), LocalDate.now(clock));
+        var live = batchRepository.findByItemIdInOrderByCreatedAtAsc(List.of(item.getId())).stream()
+            .filter(b -> "ACTIVE".equals(b.getLifecycleStatus()) && b.getQuantity().signum()>0).toList();
+        BigDecimal total = live.isEmpty() ? batch.getQuantity() : live.stream().map(InventoryBatchEntity::getQuantity).reduce(BigDecimal.ZERO,BigDecimal::add);
         return new ItemResponse(item.getId(), item.getName(), item.getCategoryId(), item.getBrand(),
-            item.getLifecycleStatus(), batch.getQuantity(), batch.getUnit(), batch.getProductionDate(),
+            item.getLifecycleStatus(), total, batch.getUnit(), batch.getProductionDate(),
             batch.getExpiryDate(), evaluation.effectiveExpiryDate(), evaluation.remainingDays(), evaluation.status(),
             item.getCreatedAt(), item.getUpdatedAt());
     }
@@ -148,7 +169,10 @@ public class ItemApplicationService {
     }
 
     private InventoryBatchEntity findBatch(String id) {
-        return batchRepository.findFirstByItemIdOrderByCreatedAtAsc(id)
+        var available=batchRepository.findByItemIdInOrderByCreatedAtAsc(List.of(id));
+        return available.stream().filter(b -> "ACTIVE".equals(b.getLifecycleStatus()) && b.getQuantity().signum()>0)
+            .min(java.util.Comparator.comparing(b -> expiryService.effectiveExpiryDate(b.getExpiryDate(),b.getOpenedDate(),b.getAfterOpenValue(),b.getAfterOpenUnit()),java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
+            .or(() -> available.stream().findFirst())
             .orElseThrow(() -> new BusinessException(300002, "inventory batch not found"));
     }
 
@@ -157,7 +181,7 @@ public class ItemApplicationService {
     }
 
     private void validateShelfLife(LocalDate production, LocalDate expiry, Integer value,
-                                   com.smartexpiry.expiry.domain.ShelfLifeUnit unit) {
+                                   com.smartexpiry.algorithm.expiry.ShelfLifeUnit unit) {
         if (expiry == null && (production == null || value == null || unit == null))
             throw new BusinessException(300004, "expiryDate or productionDate+shelfLifeValue+shelfLifeUnit is required");
         if ((value == null) != (unit == null))
@@ -165,7 +189,7 @@ public class ItemApplicationService {
     }
 
     private void validateDates(LocalDate production, LocalDate expiry, LocalDate opened, Integer after,
-                               com.smartexpiry.expiry.domain.ShelfLifeUnit unit) {
+                               com.smartexpiry.algorithm.expiry.ShelfLifeUnit unit) {
         if (java.util.stream.Stream.of(production, expiry, opened).filter(java.util.Objects::nonNull).anyMatch(d -> d.getYear() < 1900 || d.getYear() > 9999))
             throw new BusinessException(300004, "date year must be between 1900 and 9999");
         if (after != null && opened == null) throw new BusinessException(300004, "openedDate is required for after-open duration");

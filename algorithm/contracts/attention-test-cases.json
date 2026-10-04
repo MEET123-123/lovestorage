@@ -1,0 +1,24 @@
+{
+  "today": "2026-10-03",
+  "cases": [
+    {"id":"expired","input":{"expiryDate":"2026-10-02"},"score":100,"priority":"HIGH","reasonCodes":["EXPIRED"]},
+    {"id":"today","input":{"expiryDate":"2026-10-03"},"score":90,"priority":"HIGH","reasonCodes":["EXPIRES_TODAY"]},
+    {"id":"tomorrow","input":{"expiryDate":"2026-10-04"},"score":80,"priority":"HIGH","reasonCodes":["EXPIRES_TOMORROW"]},
+    {"id":"two-days","input":{"expiryDate":"2026-10-05"},"score":70,"priority":"MEDIUM","reasonCodes":["EXPIRES_IN_TWO_DAYS"]},
+    {"id":"three-days","input":{"expiryDate":"2026-10-06"},"score":60,"priority":"MEDIUM","reasonCodes":["EXPIRES_IN_THREE_DAYS"]},
+    {"id":"week","input":{"expiryDate":"2026-10-10"},"score":40,"priority":"MEDIUM","reasonCodes":["EXPIRES_THIS_WEEK"]},
+    {"id":"outside-window","input":{"expiryDate":"2026-10-11"},"excluded":true},
+    {"id":"cosmetics-window","input":{"expiryDate":"2026-10-23","reminderDays":30},"score":10,"priority":"LOW","reasonCodes":["WITHIN_REMINDER_WINDOW"]},
+    {"id":"missing-expiry","input":{},"score":20,"priority":"LOW","reasonCodes":["MISSING_EXPIRY"]},
+    {"id":"pao","input":{"expiryDate":"2026-12-01","openedDate":"2026-10-01","afterOpenValue":3,"afterOpenUnit":"DAY"},"score":105,"priority":"HIGH","reasonCodes":["EXPIRES_TOMORROW","OPENED","PAO_NEAR"],"effectiveExpiryDate":"2026-10-04"},
+    {"id":"month-clamp","input":{"expiryDate":"2027-01-01","openedDate":"2026-08-31","afterOpenValue":1,"afterOpenUnit":"MONTH"},"score":110,"priority":"HIGH","reasonCodes":["EXPIRED","OPENED"],"effectiveExpiryDate":"2026-09-30"},
+    {"id":"snoozed","input":{"expiryDate":"2026-10-04","snoozeUntil":"2026-10-05"},"excluded":true},
+    {"id":"snooze-returned","input":{"expiryDate":"2026-10-04","snoozeUntil":"2026-10-03"},"score":85,"priority":"HIGH","reasonCodes":["EXPIRES_TOMORROW","SNOOZE_RETURNED"]},
+    {"id":"quantity","input":{"expiryDate":"2026-10-06","quantity":3},"score":65,"priority":"MEDIUM","reasonCodes":["EXPIRES_IN_THREE_DAYS","LARGE_QUANTITY"]},
+    {"id":"consumed","input":{"expiryDate":"2026-10-02","lifecycleStatus":"CONSUMED"},"excluded":true},
+    {"id":"discarded","input":{"expiryDate":"2026-10-02","lifecycleStatus":"DISCARDED"},"excluded":true},
+    {"id":"archived","input":{"expiryDate":"2026-10-02","lifecycleStatus":"ARCHIVED"},"excluded":true},
+    {"id":"deleted","input":{"expiryDate":"2026-10-02","deleted":true},"excluded":true},
+    {"id":"zero-quantity","input":{"expiryDate":"2026-10-02","quantity":0},"excluded":true}
+  ]
+}
