@@ -1,3 +1,9 @@
+> 算法整理与云部署：参见 [algorithm](algorithm/README.md) 和 [云服务器/已有数据库部署步骤](docs/CLOUD_DEPLOYMENT.md)。
+
+> 2026-10-04 更新：已接入多批次/部分消耗、完整库存双向同步与冲突选择、持久化识别草稿和 Mock 调试入口。入口和本地测试步骤见 [V2 实施说明](docs/V2_IMPLEMENTATION.md)。Mock 不代表真实 OCR/语音或模型训练能力；当前为本地可构建候选版。
+
+> 主设计现统一为 [V2.0 收敛版](docs/SmartExpiry_Technical_Design_V2.0.md)。本轮 Today / Attention 工作区实现、测试与剩余差距见 [V2 实施附录](docs/V2_IMPLEMENTATION.md)。
+
 # Smart Expiry HarmonyOS 客户端
 
 HarmonyOS 客户端（ArkTS + ArkUI），支持离线库存管理、到期日期规则、提醒适配、账号登录及按账号隔离的本地数据。当前候选版本为 0.4.0。

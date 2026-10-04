@@ -1,0 +1,19 @@
+{
+  "version": "attention-rule-v1",
+  "expired": 100,
+  "today": 90,
+  "tomorrow": 80,
+  "twoDays": 70,
+  "threeDays": 60,
+  "week": 40,
+  "withinWindow": 10,
+  "unknown": 20,
+  "opened": 10,
+  "paoNear": 15,
+  "paoWindowDays": 7,
+  "snoozeReturned": 5,
+  "quantityThreshold": 3,
+  "quantityBonus": 5,
+  "highThreshold": 80,
+  "mediumThreshold": 40
+}

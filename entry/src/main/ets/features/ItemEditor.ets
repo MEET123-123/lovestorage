@@ -1,8 +1,8 @@
 import { Item } from '../domain/Item';
-import { InventoryDomain } from '../domain/InventoryDomain';
-import { ExpiryService, ShelfLifeUnit } from '../domain/ExpiryService';
+import { InventoryDomain } from '../algorithm/InventoryDomain';
+import { ExpiryService, ShelfLifeUnit } from '../algorithm/ExpiryService';
 import { SectionTitle } from '../components/InventoryComponents';
-import { RecognitionEngine } from '../domain/RecognitionEngine';
+import { RecognitionEngine } from '../algorithm/RecognitionEngine';
 
 @Component
 export struct ItemEditor {
@@ -23,7 +23,7 @@ export struct ItemEditor {
   @State private afterUnit: number = 1;
   @State private location: string = '';
   @State private notes: string = '';
-  @State private reminder: string = '7';
+  @State private reminder: string = '';
   @State private derive: boolean = false;
   @State private error: string = '';
   @State private pasted: string = '';
@@ -41,7 +41,7 @@ export struct ItemEditor {
     this.opened = this.item.openedDate ?? ''; this.afterOpen = this.item.afterOpenValue === undefined ? '' : `${this.item.afterOpenValue}`;
     this.afterUnit = Math.max(0, this.units.indexOf(this.item.afterOpenUnit ?? 'MONTH'));
     this.location = this.item.location ?? ''; this.notes = this.item.notes ?? '';
-    this.reminder = `${this.item.reminderDays ?? InventoryDomain.category(this.item.categoryId).days}`;
+    this.reminder = this.item.reminderDays === undefined ? '' : `${this.item.reminderDays}`;
   }
   private proposed(): Item {
     let expiry: string | undefined = this.expiry.trim() || undefined;
@@ -52,14 +52,14 @@ export struct ItemEditor {
       }
     }
     return {
-      id: this.item.id, name: this.name.trim(), categoryId: InventoryDomain.categories[this.category].id,
+      id: this.item.id,sourceMode:this.item.sourceMode, name: this.name.trim(), categoryId: InventoryDomain.categories[this.category].id,
       lifecycleStatus: this.item.lifecycleStatus, createdAt: this.item.createdAt, updatedAt: this.item.updatedAt,
-      remoteId: this.item.remoteId, expiryDate: expiry, brand: this.brand.trim(), quantity: Number(this.quantity), unit: this.unit.trim() || '件',
+      remoteId: this.item.remoteId, remoteVersion: this.item.remoteVersion, primaryBatchId: this.item.primaryBatchId, expiryDate: expiry, brand: this.brand.trim(), quantity: Number(this.quantity), unit: this.unit.trim() || '件',
       productionDate: this.production.trim() || undefined, shelfLifeValue: this.derive ? Number(this.shelfLife) : undefined,
       shelfLifeUnit: this.derive ? this.units[this.shelfUnit] : undefined,
       openedDate: this.opened.trim() || undefined, afterOpenValue: this.afterOpen.trim() === '' ? undefined : Number(this.afterOpen),
       afterOpenUnit: this.afterOpen.trim() === '' ? undefined : this.units[this.afterUnit], location: this.location.trim(), notes: this.notes.trim(),
-      reminderDays: Number(this.reminder), snoozeUntil: this.item.snoozeUntil
+      reminderDays: this.reminder.trim() === '' ? undefined : Number(this.reminder), snoozeUntil: this.item.snoozeUntil
     };
   }
   private preview(): string {
@@ -124,7 +124,7 @@ export struct ItemEditor {
             this.field('物品名称 *', this.name, '例如：鲜牛奶、面霜', (v: string) => { this.name = v; })
             Select([{ value: '食品' }, { value: '美妆个护' }, { value: '宠物粮' }, { value: '日用其他' }])
               .selected(this.category).value(InventoryDomain.categories[this.category].name).width('100%')
-              .onSelect((index: number) => { this.category = index; this.reminder = `${InventoryDomain.categories[index].days}`; }).enabled(!this.busy)
+              .onSelect((index: number) => { this.category = index; }).enabled(!this.busy)
             this.field('品牌（选填）', this.brand, '品牌名称', (v: string) => { this.brand = v; })
             this.field('数量 *', this.quantity, '例如 1 或 0.5', (v: string) => { this.quantity = v; })
             this.field('单位', this.unit, '件 / 盒 / 瓶 / kg', (v: string) => { this.unit = v; })
@@ -155,7 +155,7 @@ export struct ItemEditor {
           Column({ space: 12 }) {
             this.caption('03  收纳与提醒')
             this.field('存放位置', this.location, '冰箱冷藏 / 橱柜 / 梳妆台', (v: string) => { this.location = v; })
-            this.field('提前几天提醒', this.reminder, '0–365 天', (v: string) => { this.reminder = v; })
+            this.field('提前几天提醒（留空使用多节点）', this.reminder, '留空或 0–365 天', (v: string) => { this.reminder = v; })
             Text('首页会显示到期待办；系统通知需在“我的”中单独开启。').fontSize(11).fontColor('#748078')
             TextArea({ text: this.notes, placeholder: '备注、储存要求等' }).height(90).maxLength(500).onChange((v: string) => { this.notes = v; })
           }.padding(16).backgroundColor('#FFFFFF').borderRadius(18)

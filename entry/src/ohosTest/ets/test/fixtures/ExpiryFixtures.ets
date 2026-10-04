@@ -1,5 +1,5 @@
 // AUTO-GENERATED. DO NOT EDIT.
-// Source: /shared/expiry-test-cases.json
+// Source: /algorithm/contracts/expiry-test-cases.json
 
 export interface ExpiryFixture {
   id: string;

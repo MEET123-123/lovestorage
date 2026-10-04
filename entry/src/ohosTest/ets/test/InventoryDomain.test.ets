@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@ohos/hypium';
 import { Item } from '../../../main/ets/domain/Item';
-import { InventoryDomain } from '../../../main/ets/domain/InventoryDomain';
-import { ReminderPlan } from '../../../main/ets/domain/ReminderPlan';
+import { InventoryDomain } from '../../../main/ets/algorithm/InventoryDomain';
+import { ReminderPlan } from '../../../main/ets/algorithm/ReminderPlan';
 
 export default function inventoryDomainTest(): void {
   describe('Inventory domain', () => {

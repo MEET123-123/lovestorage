@@ -22,6 +22,9 @@ export interface Item {
   notes?: string;
   reminderDays?: number;
   snoozeUntil?: string;
+  primaryBatchId?: string;
+  remoteVersion?: number;
+  sourceMode?: string;
 }
 
 // Separate batch storage; the current editor exposes one batch per item.
@@ -38,7 +41,17 @@ export interface InventoryBatch {
   location?: string;
 }
 
+export interface BatchRecord extends InventoryBatch {
+  id: string;
+  itemId: string;
+  quantity: number;
+  lifecycleStatus: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface ItemMetadata {
+  sourceMode?: string;
   brand?: string;
   notes?: string;
   reminderDays?: number;
@@ -53,6 +66,8 @@ export interface ConsumptionRecord {
   quantity: number;
   createdAt: number;
   revoked: number;
+  batchId?: string;
+  batchSnapshot?: string;
 }
 
 export interface ShoppingEntry {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@ohos/hypium';
-import { ExpiryService, ShelfLifeUnit } from '../../../main/ets/domain/ExpiryService';
+import { ExpiryService, ShelfLifeUnit } from '../../../main/ets/algorithm/ExpiryService';
 import { EXPIRY_FIXTURES } from './fixtures/ExpiryFixtures';
 
 export default function expiryServiceTest(): void {

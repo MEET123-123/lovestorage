@@ -1,5 +1,5 @@
 import { Item } from '../domain/Item';
-import { InventoryDomain } from '../domain/InventoryDomain';
+import { InventoryDomain } from '../algorithm/InventoryDomain';
 
 @Component
 export struct SectionTitle {
@@ -40,6 +40,7 @@ export struct ItemCard {
         Row({ space: 6 }) {
           Text(this.item.name).fontSize(17).fontWeight(FontWeight.Medium).fontColor('#223D31').maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis }).layoutWeight(1)
           if (this.item.pending === 1) { Text('待上传').fontSize(10).fontColor('#8A968E') }
+          if ((this.item.sourceMode??'').startsWith('MOCK')) {Text('Mock 样例').fontSize(10).fontColor('#9B5C25')}
         }.width('100%')
         Text(`${this.item.quantity ?? 1} ${this.item.unit ?? '件'}  ·  ${this.item.location || InventoryDomain.category(this.item.categoryId).name}`)
           .fontSize(12).fontColor('#748078').maxLines(1).width('100%')

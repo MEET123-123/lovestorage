@@ -1,5 +1,5 @@
 import { Item, ConsumptionRecord } from '../domain/Item';
-import { InventoryDomain } from '../domain/InventoryDomain';
+import { InventoryDomain } from '../algorithm/InventoryDomain';
 
 @Component
 export struct ItemDetail {
@@ -12,6 +12,7 @@ export struct ItemDetail {
   onDelete: () => void = () => {};
   onSnooze: () => void = () => {};
   onShopping: () => void = () => {};
+  onBatches: () => void = () => {};
   @Builder
   private row(label: string, value: string) {
     Row({ space: 12 }) {
@@ -52,6 +53,7 @@ export struct ItemDetail {
           Button('编辑资料').layoutWeight(1).onClick(this.onEdit).enabled(!this.busy)
           Button('加入补货').layoutWeight(1).backgroundColor('#FFFFFF').fontColor('#28785C').onClick(this.onShopping).enabled(!this.busy)
         }.width('100%')
+        Button('管理批次 / 记录部分消耗').width('100%').backgroundColor('#E5EEDD').fontColor('#28785C').enabled(!this.busy).onClick(this.onBatches)
         if (this.item.lifecycleStatus === 'ACTIVE') {
           Row({ space: 10 }) {
             Button('已用完').layoutWeight(1).backgroundColor('#28785C').onClick(() => this.onTransition('CONSUMED')).enabled(!this.busy)
@@ -70,7 +72,7 @@ export struct ItemDetail {
           Column({ space: 10 }) {
             Text('处理记录').fontSize(16).fontWeight(FontWeight.Medium).fontColor('#365A48').width('100%')
             ForEach(this.records.filter((r: ConsumptionRecord) => r.itemId === this.item.id), (r: ConsumptionRecord) => {
-              Text(`${InventoryDomain.dateText(new Date(r.createdAt))}  ${r.action === 'CONSUMED' ? '已用完' : '已丢弃'}${r.revoked === 1 ? ' · 已撤销' : ''}`).fontSize(13).fontColor('#748078').width('100%')
+              Text(`${InventoryDomain.dateText(new Date(r.createdAt))}  ${r.action === 'CONSUMED' ? '已用完' : r.action === 'PARTIAL_CONSUMED' ? '部分消耗' : '已丢弃'} ${r.quantity}${r.revoked === 1 ? ' · 已撤销' : ''}`).fontSize(13).fontColor('#748078').width('100%')
             }, (r: ConsumptionRecord) => `${r.id}-${r.revoked}`)
           }.padding(16).backgroundColor('#FFFFFF').borderRadius(18)
         }

@@ -7,8 +7,8 @@ function load(name,deps={}) {
  vm.runInNewContext(source,{exports,require:key=>{assert.ok(deps[key],key);return deps[key];},Date,JSON,Error,console});return exports;
 }
 const http={RequestMethod:{GET:'GET',POST:'POST',PUT:'PUT',DELETE:'DELETE'},createHttp:()=>({destroy(){},async request(url,options){const res=await fetch(url,{method:options.method,headers:options.header,body:options.extraData||undefined,signal:AbortSignal.timeout(15000)});return {responseCode:res.status,result:await res.text()};}})};
-const expiry=load('domain/ExpiryService');
-const {ApiClient}=load('data/remote/ApiClient',{'@kit.NetworkKit':{http},'../../domain/ExpiryService':expiry});
+const expiry=load('algorithm/ExpiryService');
+const {ApiClient}=load('data/remote/ApiClient',{'@kit.NetworkKit':{http},'../../algorithm/ExpiryService':expiry});
 const switches=[];let rejectDatabase=false;
 const {SessionManager:S}=load('data/SessionManager',{'./remote/ApiClient':{ApiClient},'./local/AppDatabase':{AppDatabase:{async switchAccount(id){if(rejectDatabase)throw Error('database unavailable');switches.push(id||'guest');}}},'./local/ItemLocalRepository':{ItemLocalRepository:class{async setSetting(){} async setServer(){}}},'../reminder/ReminderService':{ReminderService:{async clear(){throw Error('permission denied');}}}});
 async function main(){

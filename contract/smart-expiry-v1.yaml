@@ -1,13 +1,118 @@
 openapi: 3.1.0
 info:
   title: Smart Expiry API
-  version: 1.1.0-local
+  version: 1.4.0-local
   description: Authenticated local candidate with account inventory, revision-checked backups and deterministic recognition.
 security:
   - bearerAuth: []
 servers:
   - url: http://localhost:8080
 paths:
+  /api/v1/sync/inventory:
+    get:
+      operationId: listInventorySnapshots
+      summary: List current account full inventory including deletion tombstones
+      responses:
+        '200': { description: 'Envelope data is an array of InventorySnapshot' }
+        '401': { description: Authentication required }
+  /api/v1/sync/inventory/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      operationId: getInventorySnapshot
+      responses:
+        '200': { description: 'Envelope data is InventorySnapshot' }
+        '404': { description: Missing or owned by another account }
+    put:
+      operationId: saveInventorySnapshot
+      summary: Atomically replace inventory and all batches using expected version
+      description: Omit expectedVersion on initial create. Identical payload replay succeeds. Conflict requires explicit user choice. Tombstones cannot be implicitly restored.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InventoryWrite' }
+      responses:
+        '200': { description: 'Envelope data is InventorySnapshot' }
+        '400': { description: Invalid snapshot or batch fields }
+        '404': { description: Inventory or batch belongs to another account }
+        '409': { description: Version conflict }
+  /api/v1/events/status:
+    get:
+      operationId: eventQueueStatus
+      summary: Count current account pending and published events
+      responses:
+        '200': { description: 'Envelope data contains pending and published integer counts' }
+        '401': { description: Authentication required }
+  /api/v1/events/export:
+    get:
+      operationId: exportAlgorithmEvents
+      summary: Export only current account published events for offline evaluation
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 1000, default: 500 }
+        - name: after
+          in: query
+          schema: { type: string, format: uuid }
+          description: nextCursor returned by the preceding page
+      responses:
+        '200':
+          description: 'Envelope data has events and nextCursor (null at end). Each event also has recordedAt, separate from occurredAt.'
+        '400': { description: Invalid limit or cursor format }
+        '401': { description: Authentication required }
+        '404': { description: Cursor does not belong to current account }
+  /api/v1/events:
+    post:
+      operationId: ingestBehaviorEvents
+      summary: Ingest 1 to 100 account-owned events through transactional outbox
+      description: eventId is idempotent. occurredAt preserves original action time. Unknown properties and raw recognition data are rejected.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [events]
+              properties:
+                events:
+                  type: array
+                  minItems: 1
+                  maxItems: 100
+                  items: { $ref: '#/components/schemas/BehaviorEvent' }
+      responses:
+        '200': { description: Envelope data is accepted event count }
+        '400': { description: Invalid event or private fields }
+        '404': { description: Inventory not owned by current account }
+        '409': { description: Event ID already used with different content }
+  /api/v1/attention:
+    get:
+      operationId: listAttention
+      summary: Rank the current account's synchronized inventory using deterministic rules
+      description: Uses Asia/Shanghai natural date. Excludes handled items. Ranks the earliest effective expiry among active batches with aggregate quantity. Full sync includes snooze and reminder overrides; pending local edits remain on-device.
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+      responses:
+        '200':
+          description: Stable score-descending ranking. Attention priority is not food safety or recognition confidence.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [code, message, data]
+                properties:
+                  code: { type: integer }
+                  message: { type: string }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AttentionDecision' }
+        '400': { description: Invalid limit }
+        '401': { description: Login required }
   /api/v1/auth/register:
     post:
       security: []
@@ -423,3 +528,60 @@ components:
     ShelfLifeUnit:
       type: string
       enum: [DAY, MONTH, YEAR]
+    AttentionDecision:
+      type: object
+      required: [itemId, score, priority, reasonCodes, ruleVersion]
+      properties:
+        itemId: { type: string, format: uuid }
+        score: { type: integer, minimum: 0, description: Weighted attention score; not a probability }
+        priority: { type: string, enum: [HIGH, MEDIUM, LOW] }
+        reasonCodes:
+          type: array
+          items:
+            type: string
+            enum: [EXPIRED, EXPIRES_TODAY, EXPIRES_TOMORROW, EXPIRES_IN_TWO_DAYS, EXPIRES_IN_THREE_DAYS, EXPIRES_THIS_WEEK, WITHIN_REMINDER_WINDOW, MISSING_EXPIRY, OPENED, PAO_NEAR, SNOOZE_RETURNED, LARGE_QUANTITY]
+        effectiveExpiryDate: { type: [string, 'null'], format: date }
+        remainingDays: { type: [integer, 'null'] }
+        ruleVersion: { type: string, example: attention-rule-v1 }
+    InventoryWrite:
+      type: object
+      required: [payload]
+      properties:
+        expectedVersion: { type: integer, minimum: 0 }
+        payload: { type: string, minLength: 2, maxLength: 350000, description: 'Serialized JSON {item, batches}; 1 to 1000 batches, stable UUIDs, quantity up to 3 decimal places, one unit per item' }
+    InventorySnapshot:
+      type: object
+      required: [id, version, payload, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        version: { type: integer }
+        payload: { type: string }
+        updatedAt: { type: string, format: date-time }
+        deletedAt: { type: [string, 'null'], format: date-time }
+    BehaviorEvent:
+      type: object
+      required: [eventId, eventType, eventVersion, occurredAt, properties]
+      properties:
+        eventId: { type: string, format: uuid }
+        eventType: { type: string, enum: [ITEM_CREATED, ITEM_UPDATED, ITEM_CONSUMED, ITEM_PARTIAL_CONSUMED, ITEM_DISCARDED, ITEM_DELETED, ITEM_SNOOZED, DRAFT_SAVED, REMINDER_DELIVERED, REMINDER_ACTION, SUGGESTION_ACCEPTED, DECISION_SHOWN, DECISION_FEEDBACK] }
+        eventVersion: { type: string, const: '1.0' }
+        occurredAt: { type: string, format: date-time }
+        properties:
+          type: object
+          additionalProperties: false
+          required: [itemId]
+          properties:
+            itemId: { type: string, format: uuid }
+            batchId: { type: string, format: uuid }
+            quantity: { type: number, exclusiveMinimum: 0 }
+            decisionId: { type: string, format: uuid }
+            algorithmVersion: { type: string, pattern: '^[a-zA-Z0-9_.-]{1,64}$' }
+            action: { type: string, enum: [CONSUMED, DISCARDED, SNOOZE, UNDO, NOT_HELPFUL] }
+            score: { type: integer, minimum: 0, maximum: 4000000 }
+            remainingDays: { type: integer, minimum: -4000000, maximum: 4000000 }
+            opened: { type: boolean }
+            mock: { type: boolean }
+            reasonCodes:
+              type: array
+              maxItems: 30
+              items: { type: string, pattern: '^[A-Z_]{1,64}$' }

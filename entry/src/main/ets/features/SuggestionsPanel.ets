@@ -1,5 +1,5 @@
 import { Item, ShoppingEntry } from '../domain/Item';
-import { InventoryDomain } from '../domain/InventoryDomain';
+import { InventoryDomain } from '../algorithm/InventoryDomain';
 import { SectionTitle, EmptyState } from '../components/InventoryComponents';
 import { UserProfile, ProfileDomain } from '../domain/UserProfile';
 

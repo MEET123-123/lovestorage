@@ -1,4 +1,4 @@
-import { Item, ConsumptionRecord } from './Item';
+import { Item, ConsumptionRecord } from '../domain/Item';
 import { ExpiryService, ExpiryEvaluation, ExpiryStatus, ShelfLifeUnit } from './ExpiryService';
 import { RecognitionEngine } from './RecognitionEngine';
 
@@ -10,7 +10,7 @@ export class InventoryDomain {
   static readonly categories: CategoryView[] = [
     { id: 'food', name: '食品', mark: '食', color: '#28785C', days: 7 },
     { id: 'cosmetics', name: '美妆个护', mark: '妆', color: '#A15B73', days: 30 },
-    { id: 'pet_food', name: '宠物粮', mark: '宠', color: '#AD7835', days: 7 },
+    { id: 'pet_food', name: '宠物粮', mark: '宠', color: '#AD7835', days: 14 },
     { id: 'other', name: '日用其他', mark: '物', color: '#5576A1', days: 7 }
   ];
   static today(): string { return InventoryDomain.dateText(new Date()); }

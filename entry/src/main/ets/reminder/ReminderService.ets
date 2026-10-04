@@ -2,7 +2,7 @@ import { common } from '@kit.AbilityKit';
 import { reminderAgentManager } from '@kit.BackgroundTasksKit';
 import { notificationManager } from '@kit.NotificationKit';
 import { Item } from '../domain/Item';
-import { ReminderPlan } from '../domain/ReminderPlan';
+import { ReminderPlan } from '../algorithm/ReminderPlan';
 
 export class ReminderService {
   private static context?: common.UIAbilityContext;
@@ -12,8 +12,8 @@ export class ReminderService {
     await notificationManager.requestEnableNotification(ReminderService.context);
   }
   static async clear(): Promise<void> { await reminderAgentManager.cancelAllReminders(); }
-  static async rebuild(items: Item[]): Promise<string> {
-    const plans = ReminderPlan.create(items, Date.now());
+  static async rebuild(items: Item[], hour: number = 9): Promise<string> {
+    const plans = ReminderPlan.create(items, Date.now(),hour);
     await reminderAgentManager.cancelAllReminders();
     let count = 0;
     for (const plan of plans.slice(0, 20)) {

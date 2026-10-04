@@ -1,6 +1,7 @@
 import { Item, ConsumptionRecord } from '../domain/Item';
-import { InventoryDomain, CategoryView } from '../domain/InventoryDomain';
+import { InventoryDomain, CategoryView } from '../algorithm/InventoryDomain';
 import { SectionTitle, EmptyState } from '../components/InventoryComponents';
+import { StatisticsEngine } from '../algorithm/StatisticsEngine';
 
 @Component
 export struct StatisticsPanel {
@@ -9,11 +10,10 @@ export struct StatisticsPanel {
   @Prop today: string = '';
   @State private period: number = 30;
   private filtered(): ConsumptionRecord[] {
-    const start = new Date(`${this.today}T00:00:00`); start.setDate(start.getDate() - this.period + 1);
-    return this.records.filter((r: ConsumptionRecord) => r.revoked === 0 && (this.period === 0 || r.createdAt >= start.getTime()));
+    return StatisticsEngine.records(this.records,this.today,this.period);
   }
   private count(action: string): number { return this.filtered().filter((r: ConsumptionRecord) => r.action === action).length; }
-  private rate(): number { return this.filtered().length === 0 ? 0 : Math.round(this.count('CONSUMED') * 100 / this.filtered().length); }
+  private rate(): number { return StatisticsEngine.summary(this.filtered()).useRate; }
   private categoryCount(id: string): number { return this.items.filter((i: Item) => i.categoryId === id && i.lifecycleStatus === 'ACTIVE').length; }
   build() {
     Scroll() {
@@ -26,11 +26,12 @@ export struct StatisticsPanel {
         }
         Column({ space: 10 }) {
           Text(`${this.rate()}%`).fontSize(52).fontWeight(FontWeight.Bold).fontColor('#28785C')
-          Text('用完占比').fontSize(15).fontColor('#365A48')
-          Text('用完次数 ÷（用完次数 + 丢弃次数）').fontSize(11).fontColor('#748078')
+          Text('使用操作占比').fontSize(15).fontColor('#365A48')
+          Text('（用完 + 部分消耗）次数 ÷ 全部有效处理次数').fontSize(11).fontColor('#748078')
           Progress({ value: this.rate(), total: 100, type: ProgressType.Linear }).color('#28785C').backgroundColor('#E7EDE5').width('90%')
           Row({ space: 24 }) {
             Text(`用完 ${this.count('CONSUMED')} 次`).fontColor('#28785C')
+            Text(`部分 ${this.count('PARTIAL_CONSUMED')} 次`).fontColor('#28785C')
             Text(`丢弃 ${this.count('DISCARDED')} 次`).fontColor('#B17849')
           }.padding({ top: 8 })
         }.width('100%').padding(22).backgroundColor('#FFFFFF').borderRadius(22)
@@ -53,7 +54,7 @@ export struct StatisticsPanel {
               Text(r.name).fontSize(15).fontColor('#223D31')
               Text(InventoryDomain.dateText(new Date(r.createdAt))).fontSize(12).fontColor('#748078')
             }.alignItems(HorizontalAlign.Start).layoutWeight(1)
-            Text(r.action === 'CONSUMED' ? '已用完' : '已丢弃').fontSize(13).fontColor(r.action === 'CONSUMED' ? '#28785C' : '#B17849')
+            Text(`${r.action === 'CONSUMED' ? '已用完' : r.action === 'PARTIAL_CONSUMED' ? '部分消耗' : '已丢弃'} ${r.quantity}`).fontSize(13).fontColor(r.action !== 'DISCARDED' ? '#28785C' : '#B17849')
           }.padding(16).width('100%').backgroundColor('#FFFFFF').borderRadius(14)
         }, (r: ConsumptionRecord) => r.id)
         Text('恢复在库会撤销对应处理统计；旧版本中未记录时间的操作不计入本页。').fontSize(11).fontColor('#748078')

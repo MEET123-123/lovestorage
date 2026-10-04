@@ -92,6 +92,31 @@ export class AppDatabase {
         throw new Error(String(error));
       }
     }
+    if (store.version < 3) {
+      store.beginTransaction();
+      try {
+        await store.executeSql('CREATE TABLE inventory_batch_v3 (id TEXT PRIMARY KEY, item_id TEXT NOT NULL REFERENCES item(id), payload TEXT NOT NULL, lifecycle_status TEXT NOT NULL DEFAULT \'ACTIVE\', created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)');
+        await store.executeSql('INSERT INTO inventory_batch_v3 SELECT b.id,b.item_id,b.payload,i.lifecycle_status,i.created_at,i.updated_at FROM inventory_batch b JOIN item i ON i.id=b.item_id');
+        await store.executeSql('DROP TABLE inventory_batch');
+        await store.executeSql('ALTER TABLE inventory_batch_v3 RENAME TO inventory_batch');
+        await store.executeSql('CREATE INDEX idx_local_batch_item ON inventory_batch(item_id)');
+        await store.executeSql('ALTER TABLE consumption_record ADD COLUMN batch_id TEXT');
+        await store.executeSql('ALTER TABLE consumption_record ADD COLUMN batch_snapshot TEXT');
+        await store.executeSql('CREATE TABLE local_event_outbox (event_id TEXT PRIMARY KEY,event_type TEXT NOT NULL,occurred_at INTEGER NOT NULL,properties TEXT NOT NULL,pending INTEGER NOT NULL DEFAULT 1)');
+        await store.executeSql('CREATE TABLE item_draft (id TEXT PRIMARY KEY,payload TEXT NOT NULL,state TEXT NOT NULL DEFAULT \'DRAFT\',created_at INTEGER NOT NULL)');
+        await store.executeSql('ALTER TABLE item ADD COLUMN remote_version INTEGER');
+        await store.executeSql('CREATE TABLE sync_conflict (item_id TEXT PRIMARY KEY,remote_version INTEGER NOT NULL,payload TEXT NOT NULL,local_updated_at INTEGER NOT NULL)');
+        store.version = 3;
+        store.commit();
+      } catch (error) { store.rollBack(); throw new Error(String(error)); }
+    }
+    if (store.version < 4) {
+      store.beginTransaction();
+      try {
+        await store.executeSql('CREATE TABLE algorithm_decision (id TEXT PRIMARY KEY,decision_key TEXT NOT NULL UNIQUE,item_id TEXT NOT NULL,payload TEXT NOT NULL,created_at INTEGER NOT NULL,feedback TEXT,feedback_at INTEGER)');
+        store.version=4; store.commit();
+      } catch(error) { store.rollBack(); throw new Error(String(error)); }
+    }
     AppDatabase.store = store;
     return store;
   }

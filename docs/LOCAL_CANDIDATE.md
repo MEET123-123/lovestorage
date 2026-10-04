@@ -85,7 +85,7 @@ DB_PASSWORD=smart_expiry
 
 ## 算法验收
 
-两端 `shared/recognition-test-cases.json` 共 12 个固定样例，覆盖中文/全角/英文标签、闰年、无标签日期、多候选、重复候选、倒置日期和超长保质期。Java 与 ArkTS 分别执行同一批预期值。
+两端 `algorithm/contracts/recognition-test-cases.json` 共 12 个固定样例，覆盖中文/全角/英文标签、闰年、无标签日期、多候选、重复候选、倒置日期和超长保质期。Java 与 ArkTS 分别执行同一批预期值。
 
 候选 confidence=0.95 表示明确日期标签的规则强度，不是实测识别准确率。没有采集真实包装评测集，因此不能宣称达到设计文档中的 95% 日期识别指标。
 

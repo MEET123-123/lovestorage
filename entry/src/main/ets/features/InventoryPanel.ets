@@ -1,5 +1,5 @@
 import { Item } from '../domain/Item';
-import { InventoryDomain, CategoryView } from '../domain/InventoryDomain';
+import { InventoryDomain, CategoryView } from '../algorithm/InventoryDomain';
 import { ItemCard, SectionTitle, EmptyState } from '../components/InventoryComponents';
 
 @Component

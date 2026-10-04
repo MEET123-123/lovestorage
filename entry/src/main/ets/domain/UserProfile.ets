@@ -1,5 +1,6 @@
+import { AdviceEngine } from '../algorithm/AdviceEngine';
 import { Item } from './Item';
-import { InventoryDomain } from './InventoryDomain';
+import { InventoryDomain } from '../algorithm/InventoryDomain';
 
 export interface UserProfile {
   displayName: string;
@@ -38,11 +39,6 @@ export class ProfileDomain {
     return '';
   }
   static advice(item: Item, today: string, profile: UserProfile): string {
-    const base = InventoryDomain.advice(item, today);
-    if (item.categoryId !== 'food') return base;
-    const text = `${item.name} ${item.notes ?? ''}`.toLowerCase();
-    const matches = profile.allergies.concat(profile.dislikes).filter((tag: string) => text.includes(tag.toLowerCase()));
-    if (matches.length) return `名称或备注命中你的忌口：${matches.join('、')}。请先核对包装配料，不据此推荐食用。${base}`;
-    return profile.preferences.length ? `${base} 你的偏好：${profile.preferences.join('、')}，选用前请核对包装信息。` : base;
+    return AdviceEngine.describe(item,today,profile);
   }
 }

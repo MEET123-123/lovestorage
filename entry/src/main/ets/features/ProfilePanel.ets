@@ -21,6 +21,9 @@ export struct ProfilePanel {
   onLogout: () => void = () => {};
   onBackup: () => void = () => {};
   onRestore: () => void = () => {};
+  onConflicts: () => void = () => {};
+  onAlgorithms: () => void = () => {};
+  @Prop conflictCount: number = 0;
   aboutToAppear(): void { this.address = this.server; }
   build() {
     Scroll() {
@@ -55,7 +58,7 @@ export struct ProfilePanel {
             Toggle({ type: ToggleType.Switch, isOn: this.reminderEnabled }).selectedColor('#28785C').enabled(!this.busy)
               .onChange((enabled: boolean) => { if (enabled !== this.reminderEnabled) this.onReminder(enabled); })
           }.width('100%')
-          Text('在到期前指定天数的上午 09:00 提醒。设备授权和代理提醒能力可用后才会注册。').fontSize(12).fontColor('#748078').width('100%')
+          Text('按分类多节点策略在上午 09:00 提醒；自定义提前天数优先。设备授权后才会注册。').fontSize(12).fontColor('#748078').width('100%')
           Text(this.reminderStatus || '未启用系统提醒；首页的到期待办仍可使用。').fontSize(12).fontColor('#28785C').width('100%')
           if (this.reminderEnabled) { Button('重新检查并注册').fontSize(12).backgroundColor('#E5EEDD').fontColor('#28785C').enabled(!this.busy).onClick(() => this.onReminder(true)) }
         }.padding(18).backgroundColor('#FFFFFF').borderRadius(18)
@@ -70,8 +73,10 @@ export struct ProfilePanel {
             Button(this.busy ? '处理中…' : '同步上传').layoutWeight(1).backgroundColor('#28785C').enabled(!this.busy).onClick(() => this.onSync(this.address))
           }
           Button('测试当前接口连接').enabled(!this.busy).onClick(this.onCheckServer)
+          Button(`处理同步冲突（${this.conflictCount}）`).enabled(!this.busy).onClick(this.onConflicts)
+          Button('算法调试（Mock）').enabled(!this.busy).onClick(this.onAlgorithms)
           Text(this.lastSync ? `最近成功上传：${this.lastSync}` : '尚未完成上传').fontSize(11).fontColor('#748078').width('100%')
-          Text('真机填写电脑局域网地址。更换后端请先退出登录，再到登录页设置。同步上传核心字段，完整数据请使用备份。')
+          Text('真机填写电脑局域网地址。库存与全部批次双向同步；冲突须确认。历史流水与补货清单仍可用完整备份恢复。')
             .fontSize(11).fontColor('#748078').lineHeight(18).width('100%')
         }.padding(18).backgroundColor('#FFFFFF').borderRadius(18)
         Button('退出登录').width('100%').backgroundColor('#F1E7E2').fontColor('#A35F48').enabled(!this.busy).onClick(this.onLogout)

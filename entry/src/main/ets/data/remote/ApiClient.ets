@@ -1,7 +1,16 @@
 import { http } from '@kit.NetworkKit';
 import { Item } from '../../domain/Item';
-import { ExpiryService, ShelfLifeUnit } from '../../domain/ExpiryService';
+import { ExpiryService, ShelfLifeUnit } from '../../algorithm/ExpiryService';
 import { UserProfile } from '../../domain/UserProfile';
+import { SyncWrite, RemoteSnapshot } from '../../domain/Sync';
+import { PendingEvent } from '../local/LocalEvents';
+interface SnapshotEnvelope { data: RemoteSnapshot; }
+interface SnapshotsEnvelope { data: RemoteSnapshot[]; }
+interface EventBatch { events: PendingEvent[]; }
+export class ApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) { super(message); this.status = status; }
+}
 
 interface Envelope { code: number; message: string; }
 export interface Account { id: string; username: string; }
@@ -32,7 +41,7 @@ export class ApiClient {
   static baseUrl: string = '';
   static token: string = '';
 
-  static async request(path: string, method: http.RequestMethod, payload?: ItemPayload | Credentials | PasswordChange | BackupPayload | PhonePayload | UserProfile): Promise<string> {
+  static async request(path: string, method: http.RequestMethod, payload?: ItemPayload | Credentials | PasswordChange | BackupPayload | PhonePayload | UserProfile | SyncWrite | EventBatch): Promise<string> {
     const client = http.createHttp();
     try {
       const response = await client.request(`${ApiClient.baseUrl}/api/v1${path}`, {
@@ -45,13 +54,17 @@ export class ApiClient {
       const envelope = JSON.parse(text) as Envelope;
       if (response.responseCode === 401) { ApiClient.token = ''; throw new Error(envelope.message || '登录已失效，请重新登录'); }
       if (response.responseCode < 200 || response.responseCode >= 300 || envelope.code !== 0) {
-        throw new Error(envelope.message ?? `HTTP ${response.responseCode}`);
+        throw new ApiError(envelope.message ?? `HTTP ${response.responseCode}`, response.responseCode);
       }
       return text;
     } finally { client.destroy(); }
   }
 
   static async health(): Promise<string> { return ApiClient.request('/health', http.RequestMethod.GET); }
+  static async syncList(): Promise<RemoteSnapshot[]> { return (JSON.parse(await ApiClient.request('/sync/inventory', http.RequestMethod.GET)) as SnapshotsEnvelope).data; }
+  static async syncGet(id: string): Promise<RemoteSnapshot> { return (JSON.parse(await ApiClient.request(`/sync/inventory/${id}`, http.RequestMethod.GET)) as SnapshotEnvelope).data; }
+  static async syncPut(id: string, value: SyncWrite): Promise<RemoteSnapshot> { return (JSON.parse(await ApiClient.request(`/sync/inventory/${id}`, http.RequestMethod.PUT, value)) as SnapshotEnvelope).data; }
+  static async sendEvents(events: PendingEvent[]): Promise<void> { const body: EventBatch = { events }; await ApiClient.request('/events', http.RequestMethod.POST, body); }
   static async loginMethods(): Promise<LoginMethods> {
     return (JSON.parse(await ApiClient.request('/auth/methods', http.RequestMethod.GET)) as MethodsEnvelope).data;
   }
